@@ -117,7 +117,7 @@ export const FilterBar = ({ onFilter }: FilterBarProps) => {
               <SelectValue placeholder="Setor" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="RH">RH</SelectItem>
               <SelectItem value="DISCIPLINA">DISCIPLINA</SelectItem>
               <SelectItem value="DP">DP</SelectItem>
