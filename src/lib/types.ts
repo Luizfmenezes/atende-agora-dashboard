@@ -31,3 +31,8 @@ export interface DashboardStats {
   attended: number;
   remaining: number;
 }
+
+export interface SectorWhatsApp {
+  sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO";
+  phoneNumber: string;
+}

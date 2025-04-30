@@ -1,5 +1,6 @@
 
 import { Attendance, DashboardStats } from "@/lib/types";
+import { getWhatsAppNumberForSector, sendWhatsAppMessage, createAttendanceNotificationMessage } from "@/lib/whatsappService";
 
 // Mock do banco de dados
 // Em uma implementação real, você usaria uma API conectada a um banco SQLite
@@ -85,7 +86,7 @@ export const getAttendanceRecords = (
   );
 };
 
-export const createAttendanceRecord = (record: Omit<Attendance, "id" | "createdAt" | "attended">): Attendance => {
+export const createAttendanceRecord = async (record: Omit<Attendance, "id" | "createdAt" | "attended">): Promise<Attendance> => {
   const newRecord: Attendance = {
     ...record,
     id: Date.now().toString(),
@@ -94,6 +95,24 @@ export const createAttendanceRecord = (record: Omit<Attendance, "id" | "createdA
   };
   
   ATTENDANCE_RECORDS.unshift(newRecord);
+  
+  // Enviar notificação por WhatsApp
+  try {
+    const phoneNumber = getWhatsAppNumberForSector(record.sector);
+    if (phoneNumber) {
+      const message = createAttendanceNotificationMessage(
+        record.name,
+        record.registration,
+        record.position,
+        record.reason
+      );
+      
+      await sendWhatsAppMessage(phoneNumber, message);
+    }
+  } catch (error) {
+    console.error("Erro ao enviar notificação WhatsApp:", error);
+  }
+  
   return newRecord;
 };
 

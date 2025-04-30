@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ interface AttendanceFormProps {
 
 export const AttendanceForm = ({ onAttendanceCreated }: AttendanceFormProps) => {
   const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     registration: "",
     name: "",
@@ -41,15 +42,16 @@ export const AttendanceForm = ({ onAttendanceCreated }: AttendanceFormProps) => 
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
     try {
-      createAttendanceRecord(formData);
+      await createAttendanceRecord(formData);
       
       toast({
         title: "Atendimento registrado",
-        description: `O atendimento para ${formData.name} foi registrado com sucesso.`,
+        description: `O atendimento para ${formData.name} foi registrado com sucesso e uma notificação foi enviada ao setor.`,
       });
       
       // Reset form
@@ -72,6 +74,8 @@ export const AttendanceForm = ({ onAttendanceCreated }: AttendanceFormProps) => 
         variant: "destructive",
       });
       console.error("Error creating attendance:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -189,7 +193,9 @@ export const AttendanceForm = ({ onAttendanceCreated }: AttendanceFormProps) => 
           </div>
           
           <div className="flex justify-end">
-            <Button type="submit">Registrar Atendimento</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Registrando..." : "Registrar Atendimento"}
+            </Button>
           </div>
         </form>
       </DialogContent>

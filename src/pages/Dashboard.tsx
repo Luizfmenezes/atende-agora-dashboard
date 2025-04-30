@@ -10,14 +10,17 @@ import { UserManagement } from "@/components/admin/UserManagement";
 import { getAttendanceRecords, getDashboardStats } from "@/lib/attendanceService";
 import { Attendance } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsersRound, ClipboardCheck, Hourglass, LogOut, UserCog } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import RecordsPage from "@/components/records/RecordsPage";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [stats, setStats] = useState(getDashboardStats());
   const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>(getAttendanceRecords());
   const [showUserManagement, setShowUserManagement] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -98,37 +101,53 @@ const Dashboard = () => {
             <UserManagement />
           </div>
         ) : (
-          <>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-              <h2 className="text-2xl font-bold mb-4 md:mb-0">Dashboard</h2>
-              <AttendanceForm onAttendanceCreated={refreshData} />
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <TabsList className="grid w-[400px] grid-cols-2">
+                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                <TabsTrigger value="records">Registros</TabsTrigger>
+              </TabsList>
+              
+              {activeTab === "dashboard" && (
+                <AttendanceForm onAttendanceCreated={refreshData} />
+              )}
             </div>
             
-            <div className="grid gap-4 md:grid-cols-3 mb-6">
-              <StatsCard 
-                title="Recepção (em espera)" 
-                value={stats.waiting}
-                icon={<UsersRound className="h-4 w-4 text-muted-foreground" />}
-              />
-              <StatsCard 
-                title="Atendidos" 
-                value={stats.attended}
-                icon={<ClipboardCheck className="h-4 w-4 text-muted-foreground" />}
-              />
-              <StatsCard 
-                title="Faltam atender" 
-                value={stats.remaining}
-                icon={<Hourglass className="h-4 w-4 text-muted-foreground" />}
-              />
-            </div>
-          
-            <FilterBar onFilter={handleFilter} />
+            <TabsContent value="dashboard" className="mt-0">
+              <div className="grid gap-4 md:grid-cols-3 mb-6">
+                <StatsCard 
+                  title="Recepção (em espera)" 
+                  value={stats.waiting}
+                  icon={<UsersRound className="h-4 w-4 text-muted-foreground" />}
+                />
+                <StatsCard 
+                  title="Atendidos" 
+                  value={stats.attended}
+                  icon={<ClipboardCheck className="h-4 w-4 text-muted-foreground" />}
+                />
+                <StatsCard 
+                  title="Faltam atender" 
+                  value={stats.remaining}
+                  icon={<Hourglass className="h-4 w-4 text-muted-foreground" />}
+                />
+              </div>
             
-            <AttendanceTable 
-              attendanceRecords={attendanceRecords}
-              onAttendanceUpdated={refreshData}
-            />
-          </>
+              <FilterBar onFilter={handleFilter} />
+              
+              <AttendanceTable 
+                attendanceRecords={attendanceRecords}
+                onAttendanceUpdated={refreshData}
+              />
+            </TabsContent>
+            
+            <TabsContent value="records" className="mt-0">
+              <RecordsPage />
+            </TabsContent>
+          </Tabs>
         )}
       </main>
       
