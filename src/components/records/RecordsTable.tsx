@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Attendance } from "@/lib/types";
-import { FileExcel } from "lucide-react";
+import { FileSpreadsheet } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface RecordsTableProps {
@@ -51,7 +50,7 @@ export const RecordsTable = ({ records }: RecordsTableProps) => {
           onClick={exportToExcel}
           disabled={records.length === 0}
         >
-          <FileExcel className="mr-2 h-4 w-4" /> Exportar para Excel
+          <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar para Excel
         </Button>
       </div>
       

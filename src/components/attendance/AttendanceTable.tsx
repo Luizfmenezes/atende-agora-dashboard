@@ -1,19 +1,14 @@
 
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { validatePermission } from "@/lib/auth";
 import { Attendance } from "@/lib/types";
 import { updateAttendanceRecord, markAsAttended, deleteAttendanceRecord } from "@/lib/attendanceService";
-import { Pencil, CheckCircle, Trash2 } from "lucide-react";
+import { AttendanceStatus } from "./AttendanceStatus";
+import { AttendanceActions } from "./AttendanceActions";
+import { EditAttendanceDialog } from "./EditAttendanceDialog";
 
 interface AttendanceTableProps {
   attendanceRecords: Attendance[];
@@ -129,46 +124,18 @@ export const AttendanceTable = ({ attendanceRecords, onAttendanceUpdated }: Atte
                   <TableCell>{record.sector}</TableCell>
                   <TableCell>{formatDate(record.createdAt)}</TableCell>
                   <TableCell>
-                    {record.attended ? (
-                      <Badge variant="outline" className="bg-success/20 text-success">Atendido</Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-muted text-muted-foreground">Em Espera</Badge>
-                    )}
+                    <AttendanceStatus attended={record.attended} />
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      {!record.attended && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleMarkAsAttended(record.id)}
-                          disabled={!canEdit}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
-                      {canEdit && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleEditClick(record)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
-                      {canDelete && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-destructive"
-                          onClick={() => handleDelete(record.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                    <AttendanceActions 
+                      id={record.id}
+                      attended={record.attended}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      onEditClick={() => handleEditClick(record)}
+                      onMarkAsAttended={() => handleMarkAsAttended(record.id)}
+                      onDelete={() => handleDelete(record.id)}
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -177,77 +144,15 @@ export const AttendanceTable = ({ attendanceRecords, onAttendanceUpdated }: Atte
         </Table>
       </div>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Editar Registro de Atendimento</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleEditSubmit} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="registration">Matrícula</Label>
-              <Input
-                id="registration"
-                name="registration"
-                value={editFormData.registration}
-                onChange={handleEditChange}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                name="name"
-                value={editFormData.name}
-                onChange={handleEditChange}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="position">Cargo</Label>
-              <Input
-                id="position"
-                name="position"
-                value={editFormData.position}
-                onChange={handleEditChange}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="sector">Setor</Label>
-              <Select value={editFormData.sector} onValueChange={handleEditSelectChange}>
-                <SelectTrigger id="sector">
-                  <SelectValue placeholder="Selecione um setor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="RH">RH</SelectItem>
-                  <SelectItem value="DISCIPLINA">DISCIPLINA</SelectItem>
-                  <SelectItem value="DP">DP</SelectItem>
-                  <SelectItem value="PLANEJAMENTO">PLANEJAMENTO</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="reason">Motivo do Atendimento</Label>
-              <Textarea
-                id="reason"
-                name="reason"
-                value={editFormData.reason}
-                onChange={handleEditChange}
-                required
-              />
-            </div>
-            
-            <div className="flex justify-end">
-              <Button type="submit">Atualizar Registro</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <EditAttendanceDialog 
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        selectedRecord={selectedRecord}
+        editFormData={editFormData}
+        onEditChange={handleEditChange}
+        onEditSelectChange={handleEditSelectChange}
+        onSubmit={handleEditSubmit}
+      />
     </>
   );
 };
