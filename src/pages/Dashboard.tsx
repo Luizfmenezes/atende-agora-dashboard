@@ -21,7 +21,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    document.title = "Dashboard | Atende Agora";
+    document.title = "Dashboard | SpencerTransportes";
   }, []);
   
   const refreshData = () => {
@@ -59,7 +59,14 @@ const Dashboard = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <header className="bg-card border-b px-6 py-4">
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold">Atende Agora</h1>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/lovable-uploads/7af5e239-358b-4ba3-83a9-f6b902677bfe.png" 
+              alt="SpencerTransportes Logo" 
+              className="h-10" 
+            />
+            <h1 className="text-xl font-bold">SpencerTransportes</h1>
+          </div>
           <div className="flex items-center gap-4">
             {user.role === "admin" && (
               <Button 

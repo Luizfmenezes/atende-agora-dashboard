@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { createAttendanceRecord } from "@/lib/attendanceService";
-import { PlusCircle } from "lucide-react";
+import { findEmployeeByRegistration } from "@/lib/employeeService";
+import { PlusCircle, Search } from "lucide-react";
 
 interface AttendanceFormProps {
   onAttendanceCreated: () => void;
@@ -74,6 +75,36 @@ export const AttendanceForm = ({ onAttendanceCreated }: AttendanceFormProps) => 
     }
   };
 
+  const lookupEmployeeData = () => {
+    if (!formData.registration) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Digite uma matrícula para buscar informações do funcionário.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const employee = findEmployeeByRegistration(formData.registration);
+    if (employee) {
+      setFormData(prev => ({
+        ...prev,
+        name: employee.name,
+        position: employee.position,
+      }));
+      toast({
+        title: "Funcionário encontrado",
+        description: `Dados de ${employee.name} carregados com sucesso.`,
+      });
+    } else {
+      toast({
+        title: "Funcionário não encontrado",
+        description: "Não foi encontrado funcionário com esta matrícula.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -88,13 +119,25 @@ export const AttendanceForm = ({ onAttendanceCreated }: AttendanceFormProps) => 
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="registration">Matrícula</Label>
-            <Input
-              id="registration"
-              name="registration"
-              value={formData.registration}
-              onChange={handleChange}
-              required
-            />
+            <div className="flex gap-2">
+              <Input
+                id="registration"
+                name="registration"
+                value={formData.registration}
+                onChange={handleChange}
+                required
+                className="flex-1"
+              />
+              <Button 
+                type="button" 
+                onClick={lookupEmployeeData} 
+                variant="secondary" 
+                size="icon"
+                title="Buscar dados do funcionário"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           
           <div className="space-y-2">
