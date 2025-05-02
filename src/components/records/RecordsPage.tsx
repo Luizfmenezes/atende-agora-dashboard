@@ -15,8 +15,8 @@ const RecordsPage = () => {
     search: "",
     startDate: "",
     endDate: "",
-    sector: "",
-    status: ""
+    sector: "all",
+    status: "all"
   });
   
   useEffect(() => {
@@ -53,8 +53,8 @@ const RecordsPage = () => {
     const filteredRecords = getAttendanceRecords({
       startDate: filters.startDate,
       endDate: filters.endDate,
-      sector: filters.sector || undefined,
-      status: filters.status || undefined,
+      sector: filters.sector !== "all" ? filters.sector : undefined,
+      status: filters.status !== "all" ? filters.status : undefined,
       name: filters.search,
       registration: filters.search
     });
@@ -67,8 +67,8 @@ const RecordsPage = () => {
       search: "",
       startDate: "",
       endDate: "",
-      sector: "",
-      status: ""
+      sector: "all",
+      status: "all"
     });
     
     const allRecords = getAttendanceRecords();
@@ -122,7 +122,7 @@ const RecordsPage = () => {
                   <SelectValue placeholder="Todos os setores" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os setores</SelectItem>
+                  <SelectItem value="all">Todos os setores</SelectItem>
                   <SelectItem value="RH">RH</SelectItem>
                   <SelectItem value="DISCIPLINA">DISCIPLINA</SelectItem>
                   <SelectItem value="DP">DP</SelectItem>
@@ -138,7 +138,7 @@ const RecordsPage = () => {
                   <SelectValue placeholder="Todos os status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="waiting">Em Espera</SelectItem>
                   <SelectItem value="attended">Atendidos</SelectItem>
                 </SelectContent>

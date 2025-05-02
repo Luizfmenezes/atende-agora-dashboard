@@ -24,16 +24,16 @@ export const FilterBar = ({ onFilter }: FilterBarProps) => {
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [sector, setSector] = useState<string | undefined>(undefined);
-  const [status, setStatus] = useState<string | undefined>(undefined);
+  const [sector, setSector] = useState<string>("all");
+  const [status, setStatus] = useState<string>("all");
   
   const handleSearch = () => {
     onFilter({
       search,
       startDate: startDate ? startDate.toISOString() : undefined,
       endDate: endDate ? endDate.toISOString() : undefined,
-      sector,
-      status
+      sector: sector !== "all" ? sector : undefined,
+      status: status !== "all" ? status : undefined
     });
   };
   
@@ -41,8 +41,8 @@ export const FilterBar = ({ onFilter }: FilterBarProps) => {
     setSearch("");
     setStartDate(undefined);
     setEndDate(undefined);
-    setSector(undefined);
-    setStatus(undefined);
+    setSector("all");
+    setStatus("all");
     
     onFilter({
       search: "",
