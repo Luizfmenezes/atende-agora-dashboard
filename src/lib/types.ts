@@ -34,7 +34,12 @@ export interface DashboardStats {
   remaining: number;
 }
 
+export interface SectorWhatsAppNumber {
+  id: string;
+  phoneNumber: string;
+}
+
 export interface SectorWhatsApp {
   sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO";
-  phoneNumber: string;
+  phoneNumbers: SectorWhatsAppNumber[];
 }

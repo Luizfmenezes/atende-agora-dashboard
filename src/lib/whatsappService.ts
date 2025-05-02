@@ -1,29 +1,93 @@
 
-import { SectorWhatsApp } from "@/lib/types";
+import { SectorWhatsApp, SectorWhatsAppNumber } from "@/lib/types";
 
 // Configuração dos números de WhatsApp por setor
-const sectorPhones: SectorWhatsApp[] = [
+let sectorPhones: SectorWhatsApp[] = [
   {
     sector: "RH",
-    phoneNumber: "+5511999999999" // Substituir pelo número real
+    phoneNumbers: [
+      {
+        id: "1",
+        phoneNumber: "+5511999999999" // Substituir pelo número real
+      }
+    ]
   },
   {
     sector: "DISCIPLINA",
-    phoneNumber: "+5511999999998" // Substituir pelo número real
+    phoneNumbers: [
+      {
+        id: "2",
+        phoneNumber: "+5511999999998" // Substituir pelo número real
+      }
+    ]
   },
   {
     sector: "DP",
-    phoneNumber: "+5511999999997" // Substituir pelo número real
+    phoneNumbers: [
+      {
+        id: "3",
+        phoneNumber: "+5511999999997" // Substituir pelo número real
+      }
+    ]
   },
   {
     sector: "PLANEJAMENTO",
-    phoneNumber: "+5511999999996" // Substituir pelo número real
+    phoneNumbers: [
+      {
+        id: "4",
+        phoneNumber: "+5511999999996" // Substituir pelo número real
+      }
+    ]
   }
 ];
 
-export const getWhatsAppNumberForSector = (sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO"): string => {
+export const getAllSectorPhones = (): SectorWhatsApp[] => {
+  return sectorPhones;
+};
+
+export const updateSectorPhones = (newSectorPhones: SectorWhatsApp[]): void => {
+  sectorPhones = newSectorPhones;
+};
+
+export const getWhatsAppNumbersForSector = (sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO"): SectorWhatsAppNumber[] => {
   const sectorPhone = sectorPhones.find(item => item.sector === sector);
-  return sectorPhone?.phoneNumber || "";
+  return sectorPhone?.phoneNumbers || [];
+};
+
+export const getWhatsAppNumberForSector = (sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO"): string => {
+  const numbers = getWhatsAppNumbersForSector(sector);
+  return numbers.length > 0 ? numbers[0].phoneNumber : "";
+};
+
+export const addPhoneNumberToSector = (sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO", phoneNumber: string): SectorWhatsAppNumber => {
+  const newNumber: SectorWhatsAppNumber = {
+    id: Date.now().toString(),
+    phoneNumber
+  };
+  
+  const sectorIndex = sectorPhones.findIndex(item => item.sector === sector);
+  if (sectorIndex !== -1) {
+    sectorPhones[sectorIndex].phoneNumbers.push(newNumber);
+  } else {
+    sectorPhones.push({
+      sector,
+      phoneNumbers: [newNumber]
+    });
+  }
+  
+  return newNumber;
+};
+
+export const removePhoneNumberFromSector = (sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO", numberId: string): boolean => {
+  const sectorIndex = sectorPhones.findIndex(item => item.sector === sector);
+  if (sectorIndex !== -1) {
+    const phoneNumberIndex = sectorPhones[sectorIndex].phoneNumbers.findIndex(item => item.id === numberId);
+    if (phoneNumberIndex !== -1) {
+      sectorPhones[sectorIndex].phoneNumbers.splice(phoneNumberIndex, 1);
+      return true;
+    }
+  }
+  return false;
 };
 
 export const sendWhatsAppMessage = async (
@@ -62,6 +126,20 @@ export const sendWhatsAppMessage = async (
     console.error("Erro ao enviar mensagem WhatsApp:", error);
     return false;
   }
+};
+
+export const sendWhatsAppMessageToSector = async (
+  sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO",
+  message: string
+): Promise<boolean> => {
+  const phoneNumbers = getWhatsAppNumbersForSector(sector);
+  if (phoneNumbers.length === 0) {
+    console.error("Nenhum número de telefone configurado para o setor:", sector);
+    return false;
+  }
+
+  // Enviar para o primeiro número do setor (poderia ser modificado para enviar para todos)
+  return sendWhatsAppMessage(phoneNumbers[0].phoneNumber, message);
 };
 
 // Função para criar a mensagem de notificação com base nos dados do atendimento
