@@ -7,7 +7,7 @@ import { FilterBar } from "@/components/dashboard/FilterBar";
 import { AttendanceTable } from "@/components/attendance/AttendanceTable";
 import { AttendanceForm } from "@/components/attendance/AttendanceForm";
 import { UserManagement } from "@/components/admin/UserManagement";
-import { getAttendanceRecords, getDashboardStats } from "@/lib/attendanceService";
+import { getVisibleAttendanceRecords, getDashboardStats } from "@/lib/attendanceService";
 import { Attendance } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,18 +18,25 @@ import RecordsPage from "@/components/records/RecordsPage";
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [stats, setStats] = useState(getDashboardStats());
-  const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>(getAttendanceRecords());
+  const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>(getVisibleAttendanceRecords());
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const navigate = useNavigate();
   
   useEffect(() => {
     document.title = "Dashboard | SpencerTransportes";
+    
+    // Atualizar registros visíveis a cada 5 segundos para esconder registros atendidos
+    const interval = setInterval(() => {
+      refreshData();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
   
   const refreshData = () => {
     setStats(getDashboardStats());
-    setAttendanceRecords(getAttendanceRecords());
+    setAttendanceRecords(getVisibleAttendanceRecords());
   };
   
   const handleFilter = (filters: {
@@ -37,11 +44,13 @@ const Dashboard = () => {
     startDate?: string;
     endDate?: string;
     sector?: string;
+    status?: string;
   }) => {
-    const records = getAttendanceRecords({
+    const records = getVisibleAttendanceRecords({
       startDate: filters.startDate,
       endDate: filters.endDate,
       sector: filters.sector,
+      status: filters.status,
       name: filters.search,
       registration: filters.search
     });

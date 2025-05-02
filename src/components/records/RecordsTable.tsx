@@ -1,11 +1,12 @@
+
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Attendance } from "@/lib/types";
-import { FileSpreadsheet } from "lucide-react";
 import * as XLSX from "xlsx";
+import { FileSpreadsheet } from "lucide-react";
 
 interface RecordsTableProps {
   records: Attendance[];
@@ -21,7 +22,8 @@ export const RecordsTable = ({ records }: RecordsTableProps) => {
       Cargo: record.position,
       Setor: record.sector,
       "Motivo do Atendimento": record.reason,
-      "Data e Hora": format(new Date(record.createdAt), "dd/MM/yyyy HH:mm"),
+      "Data de Criação": format(new Date(record.createdAt), "dd/MM/yyyy HH:mm"),
+      "Data de Atendimento": record.attendedAt ? format(new Date(record.attendedAt), "dd/MM/yyyy HH:mm") : "N/A",
       Status: record.attended ? "Atendido" : "Em Espera"
     }));
 
@@ -62,14 +64,15 @@ export const RecordsTable = ({ records }: RecordsTableProps) => {
               <TableHead>Nome</TableHead>
               <TableHead>Cargo</TableHead>
               <TableHead>Setor</TableHead>
-              <TableHead className="w-[150px]">Data e Hora</TableHead>
+              <TableHead className="w-[150px]">Data de Criação</TableHead>
+              <TableHead className="w-[150px]">Data de Atendimento</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {records.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   Nenhum registro encontrado.
                 </TableCell>
               </TableRow>
@@ -81,6 +84,9 @@ export const RecordsTable = ({ records }: RecordsTableProps) => {
                   <TableCell>{record.position}</TableCell>
                   <TableCell>{record.sector}</TableCell>
                   <TableCell>{formatDate(record.createdAt)}</TableCell>
+                  <TableCell>
+                    {record.attendedAt ? formatDate(record.attendedAt) : "—"}
+                  </TableCell>
                   <TableCell>
                     {record.attended ? (
                       <Badge variant="outline" className="bg-success/20 text-success">Atendido</Badge>

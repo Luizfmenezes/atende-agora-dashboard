@@ -72,7 +72,7 @@ export const AttendanceTable = ({ attendanceRecords, onAttendanceUpdated }: Atte
     if (markAsAttended(id)) {
       toast({
         title: "Atendimento realizado",
-        description: "O registro foi marcado como atendido.",
+        description: "O registro foi marcado como atendido e será ocultado em 40 segundos.",
       });
       onAttendanceUpdated();
     }
@@ -124,7 +124,10 @@ export const AttendanceTable = ({ attendanceRecords, onAttendanceUpdated }: Atte
                   <TableCell>{record.sector}</TableCell>
                   <TableCell>{formatDate(record.createdAt)}</TableCell>
                   <TableCell>
-                    <AttendanceStatus attended={record.attended} />
+                    <AttendanceStatus 
+                      attended={record.attended}
+                      attendedAt={record.attendedAt}
+                    />
                   </TableCell>
                   <TableCell className="text-right">
                     <AttendanceActions 

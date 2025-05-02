@@ -15,7 +15,8 @@ const RecordsPage = () => {
     search: "",
     startDate: "",
     endDate: "",
-    sector: ""
+    sector: "",
+    status: ""
   });
   
   useEffect(() => {
@@ -39,6 +40,13 @@ const RecordsPage = () => {
     }));
   };
   
+  const handleStatusChange = (value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      status: value
+    }));
+  };
+  
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -46,6 +54,7 @@ const RecordsPage = () => {
       startDate: filters.startDate,
       endDate: filters.endDate,
       sector: filters.sector || undefined,
+      status: filters.status || undefined,
       name: filters.search,
       registration: filters.search
     });
@@ -58,7 +67,8 @@ const RecordsPage = () => {
       search: "",
       startDate: "",
       endDate: "",
-      sector: ""
+      sector: "",
+      status: ""
     });
     
     const allRecords = getAttendanceRecords();
@@ -71,7 +81,7 @@ const RecordsPage = () => {
         <h3 className="text-lg font-medium">Filtros</h3>
         
         <form onSubmit={handleSearchSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label htmlFor="search">Busca (Nome ou Matrícula)</Label>
               <Input
@@ -117,6 +127,20 @@ const RecordsPage = () => {
                   <SelectItem value="DISCIPLINA">DISCIPLINA</SelectItem>
                   <SelectItem value="DP">DP</SelectItem>
                   <SelectItem value="PLANEJAMENTO">PLANEJAMENTO</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={filters.status} onValueChange={handleStatusChange}>
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="waiting">Em Espera</SelectItem>
+                  <SelectItem value="attended">Atendidos</SelectItem>
                 </SelectContent>
               </Select>
             </div>

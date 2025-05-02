@@ -24,6 +24,8 @@ export interface Attendance {
   reason: string;
   createdAt: string;
   attended: boolean;
+  attendedAt?: string;
+  hideAfter?: number;
 }
 
 export interface DashboardStats {

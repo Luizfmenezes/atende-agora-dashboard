@@ -23,7 +23,8 @@ let ATTENDANCE_RECORDS: Attendance[] = [
     sector: "DP",
     reason: "Problema com pagamento",
     createdAt: "2025-04-29T09:15:00", 
-    attended: true
+    attended: true,
+    attendedAt: "2025-04-29T10:15:00"
   },
   {
     id: "3",
@@ -44,6 +45,7 @@ export const getAttendanceRecords = (
     sector?: string;
     name?: string;
     registration?: string;
+    status?: string;
   }
 ): Attendance[] => {
   let filteredRecords = [...ATTENDANCE_RECORDS];
@@ -61,7 +63,7 @@ export const getAttendanceRecords = (
       );
     }
     
-    if (filters.sector) {
+    if (filters.sector && filters.sector !== "all") {
       filteredRecords = filteredRecords.filter(
         record => record.sector === filters.sector
       );
@@ -78,12 +80,46 @@ export const getAttendanceRecords = (
         record => record.registration.includes(filters.registration!)
       );
     }
+    
+    if (filters.status) {
+      if (filters.status === "attended") {
+        filteredRecords = filteredRecords.filter(record => record.attended);
+      } else if (filters.status === "waiting") {
+        filteredRecords = filteredRecords.filter(record => !record.attended);
+      }
+    }
   }
   
   // Ordenar por data (mais recente primeiro)
   return filteredRecords.sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
+};
+
+export const getVisibleAttendanceRecords = (
+  filters?: {
+    startDate?: string;
+    endDate?: string;
+    sector?: string;
+    name?: string;
+    registration?: string;
+    status?: string;
+  }
+): Attendance[] => {
+  // Obter todos os registros com base nos filtros
+  let records = getAttendanceRecords(filters);
+  
+  // Filtrar registros atendidos que devem ser ocultados do dashboard
+  // mas não da aba de registros
+  const currentTime = new Date().getTime();
+  
+  return records.filter(record => {
+    if (record.attended && record.hideAfter) {
+      const hideTime = new Date(record.hideAfter).getTime();
+      return currentTime < hideTime;
+    }
+    return true;
+  });
 };
 
 export const createAttendanceRecord = async (record: Omit<Attendance, "id" | "createdAt" | "attended">): Promise<Attendance> => {
@@ -149,5 +185,15 @@ export const getDashboardStats = (): DashboardStats => {
 };
 
 export const markAsAttended = (id: string): boolean => {
-  return updateAttendanceRecord(id, { attended: true }) !== null;
+  const now = new Date();
+  const currentTime = now.toISOString();
+  
+  // Calcular quando este registro deve ser escondido (40 segundos a partir de agora)
+  const hideTime = new Date(now.getTime() + 40 * 1000).getTime();
+  
+  return updateAttendanceRecord(id, { 
+    attended: true,
+    attendedAt: currentTime,
+    hideAfter: hideTime
+  }) !== null;
 };

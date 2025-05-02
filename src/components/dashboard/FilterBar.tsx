@@ -16,6 +16,7 @@ interface FilterBarProps {
     startDate?: string;
     endDate?: string;
     sector?: string;
+    status?: string;
   }) => void;
 }
 
@@ -24,13 +25,15 @@ export const FilterBar = ({ onFilter }: FilterBarProps) => {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [sector, setSector] = useState<string | undefined>(undefined);
+  const [status, setStatus] = useState<string | undefined>(undefined);
   
   const handleSearch = () => {
     onFilter({
       search,
       startDate: startDate ? startDate.toISOString() : undefined,
       endDate: endDate ? endDate.toISOString() : undefined,
-      sector
+      sector,
+      status
     });
   };
   
@@ -39,12 +42,14 @@ export const FilterBar = ({ onFilter }: FilterBarProps) => {
     setStartDate(undefined);
     setEndDate(undefined);
     setSector(undefined);
+    setStatus(undefined);
     
     onFilter({
       search: "",
       startDate: undefined,
       endDate: undefined,
-      sector: undefined
+      sector: undefined,
+      status: undefined
     });
   };
 
@@ -122,6 +127,19 @@ export const FilterBar = ({ onFilter }: FilterBarProps) => {
               <SelectItem value="DISCIPLINA">DISCIPLINA</SelectItem>
               <SelectItem value="DP">DP</SelectItem>
               <SelectItem value="PLANEJAMENTO">PLANEJAMENTO</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="w-full md:w-auto">
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="waiting">Em Espera</SelectItem>
+              <SelectItem value="attended">Atendidos</SelectItem>
             </SelectContent>
           </Select>
         </div>
