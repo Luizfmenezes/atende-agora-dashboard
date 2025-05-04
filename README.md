@@ -1,73 +1,50 @@
-# Welcome to your Lovable project
+# 🛎️ Sistema de Atendimento de Recepção
 
-## Project info
+Este é um sistema web para controle de atendimentos em recepção, desenvolvido com foco em agilidade, organização e facilidade de uso. O objetivo é permitir o registro rápido de visitantes ou colaboradores, categorizando por setor e motivo, com um painel moderno estilo dashboard e integração com inteligência artificial para melhorar o atendimento.
 
-**URL**: https://lovable.dev/projects/c9329295-1d18-4885-b8a8-fe6fbcfc5c29
+## 🚀 Funcionalidades
 
-## How can I edit this code?
+- 📋 **Registro de Atendimentos:** Cadastro de nome, matrícula, cargo, setor, motivo e horário automaticamente preenchido.
+- 🧾 **Dashboard Interativo:** Cards com os dados dos atendimentos realizados, com contadores e filtros por data e setor.
+- 🧠 **Integração com IA (Lovable):** Suporte a sugestão automática de motivos ou resposta a atendentes com base no histórico e padrão de interações.
+- 🕒 **Horário Automático:** O sistema preenche o horário atual no momento do registro.
+- 📂 **Persistência de Dados:** Todos os dados ficam salvos em um banco de dados SQLite local.
+- ✅ **Interface Responsiva:** Totalmente funcional em desktop e tablets.
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## 🧰 Tecnologias Utilizadas
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c9329295-1d18-4885-b8a8-fe6fbcfc5c29) and start prompting.
+### 🟨 Vite
+Usado como bundler e servidor de desenvolvimento ultrarrápido. Garante recarregamento rápido e build eficiente para aplicações modernas em React.
 
-Changes made via Lovable will be committed automatically to this repo.
+### ⚛️ React
+Framework principal para a criação da interface de usuário. Utilizado com componentes reutilizáveis, estado local e reatividade.
 
-**Use your preferred IDE**
+### 🌐 HTML5 + CSS3
+A base estrutural e visual do sistema. Usado em conjunto com Tailwind CSS para um design limpo, moderno e responsivo.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🟨 JavaScript (ES6+)
+Linguagem principal da aplicação, utilizada tanto no frontend quanto no backend, com recursos modernos de ES6+.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 🟩 Node.js
+Ambiente de execução para o backend da aplicação, responsável pela comunicação com o banco de dados e gerenciamento dos registros.
 
-Follow these steps:
+### 🗂️ SQLite
+Banco de dados leve, sem servidor, utilizado para armazenar os atendimentos de forma simples e eficiente.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 🤖 Lovable IA
+Integração com a inteligência artificial **Lovable**, responsável por:
+- Sugerir motivos de atendimento com base no conteúdo digitado.
+- Ajudar na triagem automatizada com base em dados anteriores.
+- Enriquecer o atendimento com sugestões inteligentes.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 💻 Instalação e Execução
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+1. **Clone o repositório:**
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/c9329295-1d18-4885-b8a8-fe6fbcfc5c29) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```bash
+git clone https://github.com/seu-usuario/atendimento-recepcao.git
+cd atendimento-recepcao
