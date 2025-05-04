@@ -1,3 +1,4 @@
+
 # 🛎️ Sistema de Atendimento de Recepção
 
 Este é um sistema web para controle de atendimentos em recepção, desenvolvido com foco em agilidade, organização e facilidade de uso. O objetivo é permitir o registro rápido de visitantes ou colaboradores, categorizando por setor e motivo, com um painel moderno estilo dashboard e integração com inteligência artificial para melhorar o atendimento.
@@ -11,40 +12,81 @@ Este é um sistema web para controle de atendimentos em recepção, desenvolvido
 - 📂 **Persistência de Dados:** Todos os dados ficam salvos em um banco de dados SQLite local.
 - ✅ **Interface Responsiva:** Totalmente funcional em desktop e tablets.
 
----
-
 ## 🧰 Tecnologias Utilizadas
 
-### 🟨 Vite
-Usado como bundler e servidor de desenvolvimento ultrarrápido. Garante recarregamento rápido e build eficiente para aplicações modernas em React.
+### Frontend
+- ⚛️ React com Vite
+- 🎨 Tailwind CSS
+- 🧩 ShadCN UI Components
+- 📊 Recharts para gráficos e visualizações
 
-### ⚛️ React
-Framework principal para a criação da interface de usuário. Utilizado com componentes reutilizáveis, estado local e reatividade.
-
-### 🌐 HTML5 + CSS3
-A base estrutural e visual do sistema. Usado em conjunto com Tailwind CSS para um design limpo, moderno e responsivo.
-
-### 🟨 JavaScript (ES6+)
-Linguagem principal da aplicação, utilizada tanto no frontend quanto no backend, com recursos modernos de ES6+.
-
-### 🟩 Node.js
-Ambiente de execução para o backend da aplicação, responsável pela comunicação com o banco de dados e gerenciamento dos registros.
-
-### 🗂️ SQLite
-Banco de dados leve, sem servidor, utilizado para armazenar os atendimentos de forma simples e eficiente.
-
-### 🤖 Lovable IA
-Integração com a inteligência artificial **Lovable**, responsável por:
-- Sugerir motivos de atendimento com base no conteúdo digitado.
-- Ajudar na triagem automatizada com base em dados anteriores.
-- Enriquecer o atendimento com sugestões inteligentes.
-
----
+### Backend
+- 🟩 Node.js com Express
+- 🗂️ SQLite3 para armazenamento de dados
+- 🔒 bcrypt para criptografia de senhas
+- 🔄 API RESTful
 
 ## 💻 Instalação e Execução
 
-1. **Clone o repositório:**
+### Pré-requisitos
+- Node.js (v14+)
+- npm ou yarn
+
+### Passos para execução
+
+1. **Instale as dependências:**
 
 ```bash
-git clone https://github.com/seu-usuario/atendimento-recepcao.git
-cd atendimento-recepcao
+npm install
+# ou
+yarn
+```
+
+2. **Inicie o backend:**
+
+```bash
+node src/server-start.js
+```
+
+3. **Em outro terminal, inicie o frontend:**
+
+```bash
+npm run dev
+# ou
+yarn dev
+```
+
+4. O frontend estará disponível em `http://localhost:8080` e o backend em `http://localhost:3001`
+
+## Estrutura do Banco de Dados
+
+### Tabela 'usuarios'
+- id (INTEGER, PRIMARY KEY, AUTOINCREMENT)
+- matricula (TEXT, único)
+- nome (TEXT)
+- cargo (TEXT)
+- setor (TEXT)
+- senha (TEXT - armazenado com hash bcrypt)
+
+### Tabela 'atendimentos'
+- id (INTEGER, PRIMARY KEY, AUTOINCREMENT)
+- usuario_id (INTEGER, FOREIGN KEY referenciando usuarios.id)
+- horario (DATETIME)
+- setor (TEXT)
+- motivo (TEXT)
+- attended (BOOLEAN)
+- attendedAt (DATETIME)
+
+## API Endpoints
+
+### Usuários
+- `GET /api/usuarios` - Listar todos os usuários
+- `GET /api/usuarios/:id` - Obter usuário por ID
+- `POST /api/usuarios` - Criar novo usuário
+- `POST /api/usuarios/login` - Autenticar usuário
+
+### Atendimentos
+- `GET /api/atendimentos` - Listar atendimentos (suporta filtros por data, setor e status)
+- `GET /api/atendimentos/:id` - Obter atendimento por ID
+- `POST /api/atendimentos` - Registrar novo atendimento
+- `PATCH /api/atendimentos/:id/attend` - Marcar atendimento como atendido
