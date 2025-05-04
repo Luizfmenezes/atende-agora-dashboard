@@ -181,9 +181,14 @@ export const deleteAttendanceRecord = async (id: string): Promise<boolean> => {
   }
 };
 
-export const findAttendanceRecord = (id: string): Attendance | undefined => {
-  const records = getAttendanceRecords();
-  return records.find(record => record.id === id);
+export const findAttendanceRecord = async (id: string): Promise<Attendance | undefined> => {
+  try {
+    const records = await getAttendanceRecords();
+    return records.find(record => record.id === id);
+  } catch (error) {
+    console.error(`Error finding attendance record ${id}:`, error);
+    return undefined;
+  }
 };
 
 export const getSectorWhatsAppNumber = (sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO") => {
