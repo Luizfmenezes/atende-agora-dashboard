@@ -73,7 +73,7 @@ const Dashboard = () => {
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <img 
-              src="/lovable-uploads/02c87b87-9cc4-4221-bd38-1afede3e9f5d.png" 
+              src="/uploads/7af5e239-358b-4ba3-83a9-f6b902677bfe.png" 
               alt="SpencerTransportes Logo" 
               className="h-10" 
             />
