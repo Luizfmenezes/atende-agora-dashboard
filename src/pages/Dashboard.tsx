@@ -14,48 +14,81 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsersRound, ClipboardCheck, Hourglass, LogOut, UserCog } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import RecordsPage from "@/components/records/RecordsPage";
+import { useToast } from "@/components/ui/use-toast";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
-  const [stats, setStats] = useState(getDashboardStats());
-  const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>(getVisibleAttendanceRecords());
+  const [stats, setStats] = useState({ waiting: 0, attended: 0, remaining: 0 });
+  const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([]);
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   useEffect(() => {
     document.title = "Dashboard | SpencerTransportes";
     
-    // Atualizar registros visíveis a cada 5 segundos para esconder registros atendidos
+    // Carregar dados iniciais
+    refreshData();
+    
+    // Atualizar registros visíveis a cada 10 segundos para esconder registros atendidos
     const interval = setInterval(() => {
       refreshData();
-    }, 5000);
+    }, 10000);
     
     return () => clearInterval(interval);
   }, []);
   
-  const refreshData = () => {
-    setStats(getDashboardStats());
-    setAttendanceRecords(getVisibleAttendanceRecords());
+  const refreshData = async () => {
+    setIsLoading(true);
+    try {
+      const dashboardStats = await getDashboardStats();
+      setStats(dashboardStats);
+      
+      const records = await getVisibleAttendanceRecords();
+      setAttendanceRecords(records);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      toast({
+        title: "Erro ao atualizar dados",
+        description: "Não foi possível obter os dados mais recentes.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
-  const handleFilter = (filters: {
+  const handleFilter = async (filters: {
     search: string;
     startDate?: string;
     endDate?: string;
     sector?: string;
     status?: string;
   }) => {
-    const records = getVisibleAttendanceRecords({
-      startDate: filters.startDate,
-      endDate: filters.endDate,
-      sector: filters.sector,
-      status: filters.status,
-      name: filters.search,
-      registration: filters.search
-    });
-    
-    setAttendanceRecords(records);
+    setIsLoading(true);
+    try {
+      const records = await getVisibleAttendanceRecords({
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        sector: filters.sector,
+        status: filters.status,
+        name: filters.search,
+        registration: filters.search
+      });
+      
+      setAttendanceRecords(records);
+    } catch (error) {
+      console.error("Erro ao filtrar registros:", error);
+      toast({
+        title: "Erro ao filtrar",
+        description: "Ocorreu um erro ao aplicar os filtros.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handleLogout = () => {
@@ -151,6 +184,12 @@ const Dashboard = () => {
                 attendanceRecords={attendanceRecords}
                 onAttendanceUpdated={refreshData}
               />
+              
+              {isLoading && (
+                <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-md shadow-md">
+                  Carregando dados...
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="records" className="mt-0">

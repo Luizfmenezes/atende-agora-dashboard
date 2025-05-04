@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { getAttendanceRecords } from "@/lib/attendanceService";
 import { Attendance } from "@/lib/types";
 import { RecordsTable } from "@/components/records/RecordsTable";
 import { Input } from "@/components/ui/input";
@@ -8,9 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
+import { getAttendanceRecords } from "@/lib/attendanceService";
+import { useToast } from "@/components/ui/use-toast";
 
 const RecordsPage = () => {
   const [records, setRecords] = useState<Attendance[]>([]);
+  const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
     startDate: "",
@@ -18,12 +20,37 @@ const RecordsPage = () => {
     sector: "all",
     status: "all"
   });
+  const { toast } = useToast();
   
   useEffect(() => {
     // Carregar registros iniciais
-    const allRecords = getAttendanceRecords();
-    setRecords(allRecords);
+    loadRecords();
   }, []);
+  
+  const loadRecords = async (customFilters?: typeof filters) => {
+    setLoading(true);
+    try {
+      const filtersToUse = customFilters || filters;
+      const allRecords = await getAttendanceRecords({
+        startDate: filtersToUse.startDate || undefined,
+        endDate: filtersToUse.endDate || undefined,
+        sector: filtersToUse.sector !== "all" ? filtersToUse.sector : undefined,
+        status: filtersToUse.status !== "all" ? filtersToUse.status : undefined,
+        name: filtersToUse.search || undefined,
+        registration: filtersToUse.search || undefined
+      });
+      setRecords(allRecords);
+    } catch (error) {
+      console.error("Erro ao carregar registros:", error);
+      toast({
+        title: "Erro ao carregar registros",
+        description: "Ocorreu um erro ao buscar os registros de atendimento.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -49,30 +76,20 @@ const RecordsPage = () => {
   
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const filteredRecords = getAttendanceRecords({
-      startDate: filters.startDate,
-      endDate: filters.endDate,
-      sector: filters.sector !== "all" ? filters.sector : undefined,
-      status: filters.status !== "all" ? filters.status : undefined,
-      name: filters.search,
-      registration: filters.search
-    });
-    
-    setRecords(filteredRecords);
+    loadRecords();
   };
   
   const handleResetFilters = () => {
-    setFilters({
+    const resetFilters = {
       search: "",
       startDate: "",
       endDate: "",
       sector: "all",
       status: "all"
-    });
+    };
     
-    const allRecords = getAttendanceRecords();
-    setRecords(allRecords);
+    setFilters(resetFilters);
+    loadRecords(resetFilters);
   };
   
   return (
@@ -147,11 +164,12 @@ const RecordsPage = () => {
           </div>
           
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={handleResetFilters}>
+            <Button type="button" variant="outline" onClick={handleResetFilters} disabled={loading}>
               Limpar Filtros
             </Button>
-            <Button type="submit">
-              <Filter className="mr-2 h-4 w-4" /> Filtrar
+            <Button type="submit" disabled={loading}>
+              <Filter className="mr-2 h-4 w-4" /> 
+              {loading ? "Buscando..." : "Filtrar"}
             </Button>
           </div>
         </form>
