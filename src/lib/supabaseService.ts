@@ -25,6 +25,8 @@ export interface SupabaseAttendance {
   setor_id: number;
   motivo: string;
   usuario_id: number | null;
+  atendido: boolean;
+  atendido_em: string | null;
 }
 
 // Serviço para operações com setores
@@ -77,49 +79,53 @@ export const sectorService = {
   }
 };
 
-// Serviço para operações com usuários
-export const userService = {
-  // Buscar todos os usuários
-  async getAllUsers(): Promise<SupabaseUser[]> {
+// Serviço para operações com funcionários
+export const employeeService = {
+  // Buscar todos os funcionários
+  async getAllEmployees(): Promise<SupabaseUser[]> {
     const { data, error } = await supabase
-      .from('usuarios')
+      .from('funcionarios')
       .select('*')
       .order('nome');
     
     if (error) {
-      console.error("Erro ao buscar usuários:", error);
+      console.error("Erro ao buscar funcionários:", error);
       throw error;
     }
     
     return data || [];
   },
   
-  // Buscar usuário por matrícula
-  async getUserByRegistration(registration: string): Promise<SupabaseUser | null> {
+  // Buscar funcionário por matrícula
+  async getEmployeeByRegistration(registration: string): Promise<SupabaseUser | null> {
     const { data, error } = await supabase
-      .from('usuarios')
+      .from('funcionarios')
       .select('*')
       .eq('matricula', registration)
       .maybeSingle();
     
     if (error) {
-      console.error(`Erro ao buscar usuário com matrícula ${registration}:`, error);
+      console.error(`Erro ao buscar funcionário com matrícula ${registration}:`, error);
       return null;
     }
     
     return data;
   },
   
-  // Criar novo usuário
-  async createUser(user: Omit<SupabaseUser, 'id'>): Promise<SupabaseUser | null> {
+  // Criar novo funcionário
+  async createEmployee(employee: {
+    matricula: string;
+    nome: string;
+    cargo: string;
+  }): Promise<SupabaseUser | null> {
     const { data, error } = await supabase
-      .from('usuarios')
-      .insert([user])
+      .from('funcionarios')
+      .insert([employee])
       .select()
       .single();
     
     if (error) {
-      console.error("Erro ao criar usuário:", error);
+      console.error("Erro ao criar funcionário:", error);
       throw error;
     }
     
@@ -220,25 +226,52 @@ export const attendanceService = {
     return data;
   },
   
-  // Marcar atendimento como atendido (para implementação futura)
+  // Marcar atendimento como atendido
   async markAsAttended(id: number): Promise<boolean> {
-    // Esta função seria implementada se tivermos um campo "attended" na tabela
-    // Por enquanto, retorna true para simular sucesso
+    const { error } = await supabase
+      .from('atendimentos')
+      .update({
+        atendido: true,
+        atendido_em: new Date().toISOString()
+      })
+      .eq('id', id);
+    
+    if (error) {
+      console.error(`Erro ao marcar atendimento ${id} como atendido:`, error);
+      return false;
+    }
+    
+    return true;
+  },
+  
+  // Excluir atendimento
+  async deleteAttendance(id: number): Promise<boolean> {
+    const { error } = await supabase
+      .from('atendimentos')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error(`Erro ao excluir atendimento ${id}:`, error);
+      return false;
+    }
+    
     return true;
   },
   
   // Converter atendimentos do Supabase para o formato da aplicação
   mapToAttendanceModel(supabaseAttendance: any): Attendance {
     return {
-      id: supabaseAttendance.id.toString(),
+      id: String(supabaseAttendance.id),
       registration: supabaseAttendance.matricula,
       name: supabaseAttendance.nome,
       position: supabaseAttendance.cargo,
       sector: supabaseAttendance.setores?.nome || "DESCONHECIDO",
       reason: supabaseAttendance.motivo,
       createdAt: supabaseAttendance.horario,
-      attended: false, // Por padrão, considera como não atendido
-      attendedAt: undefined,
+      attended: supabaseAttendance.atendido || false,
+      attendedAt: supabaseAttendance.atendido_em || undefined,
+      hideAfter: supabaseAttendance.atendido ? 40 : undefined,
     };
   }
 };

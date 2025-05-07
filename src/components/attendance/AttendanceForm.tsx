@@ -18,6 +18,7 @@ interface AttendanceFormProps {
 export const AttendanceForm = ({ onAttendanceCreated }: AttendanceFormProps) => {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
   const [formData, setFormData] = useState({
     registration: "",
     name: "",
@@ -79,7 +80,7 @@ export const AttendanceForm = ({ onAttendanceCreated }: AttendanceFormProps) => 
     }
   };
 
-  const lookupEmployeeData = () => {
+  const lookupEmployeeData = async () => {
     if (!formData.registration) {
       toast({
         title: "Campo obrigatório",
@@ -89,23 +90,37 @@ export const AttendanceForm = ({ onAttendanceCreated }: AttendanceFormProps) => 
       return;
     }
 
-    const employee = findEmployeeByRegistration(formData.registration);
-    if (employee) {
-      setFormData(prev => ({
-        ...prev,
-        name: employee.name,
-        position: employee.position,
-      }));
+    setLookupLoading(true);
+    try {
+      const employee = await findEmployeeByRegistration(formData.registration);
+      
+      if (employee) {
+        setFormData(prev => ({
+          ...prev,
+          name: employee.name,
+          position: employee.position,
+        }));
+        
+        toast({
+          title: "Funcionário encontrado",
+          description: `Dados de ${employee.name} carregados com sucesso.`,
+        });
+      } else {
+        toast({
+          title: "Funcionário não encontrado",
+          description: "Não foi encontrado funcionário com esta matrícula.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Funcionário encontrado",
-        description: `Dados de ${employee.name} carregados com sucesso.`,
-      });
-    } else {
-      toast({
-        title: "Funcionário não encontrado",
-        description: "Não foi encontrado funcionário com esta matrícula.",
+        title: "Erro na busca",
+        description: "Ocorreu um erro ao buscar dados do funcionário.",
         variant: "destructive",
       });
+      console.error("Error looking up employee:", error);
+    } finally {
+      setLookupLoading(false);
     }
   };
 
@@ -138,8 +153,9 @@ export const AttendanceForm = ({ onAttendanceCreated }: AttendanceFormProps) => 
                 variant="secondary" 
                 size="icon"
                 title="Buscar dados do funcionário"
+                disabled={lookupLoading}
               >
-                <Search className="h-4 w-4" />
+                {lookupLoading ? <div className="h-4 w-4 animate-spin rounded-full border-t-2 border-b-2 border-primary"></div> : <Search className="h-4 w-4" />}
               </Button>
             </div>
           </div>

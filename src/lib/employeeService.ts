@@ -1,179 +1,63 @@
 
+import { employeeService as supabaseEmployeeService } from "./supabaseService";
+
 type Employee = {
   registration: string;
   name: string;
   position: string;
 };
 
-// Employee database
-const EMPLOYEES_DATA: Employee[] = [
-  // Original employees
+// Local cache of employees (for fallback)
+const EMPLOYEES_CACHE: Employee[] = [
   { registration: "12345", name: "João Silva", position: "Analista" },
   { registration: "54321", name: "Maria Oliveira", position: "Coordenadora" },
   { registration: "67890", name: "Carlos Santos", position: "Professor" },
   { registration: "11223", name: "Ana Pereira", position: "Diretora" },
   { registration: "33445", name: "Roberto Lima", position: "Motorista" },
-  
-  // Added employees
-  { registration: "21615", name: "AARAO FELICIANO DE MELO", position: "MOTORISTA" },
-  { registration: "40481", name: "ABIMAEL DE PAIVA CABRAL", position: "MOTORISTA" },
-  { registration: "41302", name: "ADAILTON DE SOUZA SOARES", position: "MOTORISTA" },
-  { registration: "20138", name: "ADAILTON DE SOUZA SOARES", position: "MOTORISTA" },
-  { registration: "22549", name: "ADALBERTO DE ARAUJO ANOLINO", position: "MOTORISTA" },
-  { registration: "20934", name: "ADALBERTO DE JESUS JUSTINO", position: "MOTORISTA" },
-  { registration: "20857", name: "ADALBERTO TEIXEIRA DE LIMA", position: "MOTORISTA" },
-  { registration: "41280", name: "ADALBERTO TOSO", position: "MOTORISTA" },
-  { registration: "21660", name: "ADAUTO AMARAL PEREIRA", position: "MOTORISTA" },
-  { registration: "41239", name: "ADEILDO DO NASCIMENTO", position: "MOTORISTA" },
-  { registration: "20840", name: "ADEILSON PEREIRA BASTISTA", position: "MOTORISTA" },
-  { registration: "41186", name: "ADELMO APARECIDO GAMA", position: "MOTORISTA" },
-  { registration: "40641", name: "ADEMILSON CORDEIRO DA SILVA", position: "MOTORISTA" },
-  { registration: "22053", name: "ADEMILSON DOS SANTOS RODRIGUES", position: "MOTORISTA" },
-  { registration: "20868", name: "ADEMIR RUAS ARAN", position: "MOTORISTA" },
-  { registration: "50345", name: "ADILSON BARBARESCO DE OLIVEIRA", position: "MOTORISTA" },
-  { registration: "41138", name: "ADILSON CONCEICAO DOS SANTOS", position: "MOTORISTA" },
-  { registration: "21104", name: "ADILSON NOGUEIRA DA SILVA", position: "MOTORISTA" },
-  { registration: "20925", name: "ADMILTON QUIRINO DOS SANTOS", position: "MOTORISTA" },
-  { registration: "20757", name: "ADONIRAM PEREIRA REIS DE SOUSA", position: "MOTORISTA" },
-  { registration: "22011", name: "ADRIANA BIBIANO", position: "MOTORISTA" },
-  { registration: "41232", name: "ADRIANO DA SILVA", position: "MOTORISTA" },
-  { registration: "21383", name: "ADRIANO DE ALMEIDA VIEIRA", position: "MOTORISTA" },
-  { registration: "40889", name: "ADRIVANIO MATIAS BERNARDO", position: "MOTORISTA" },
-  { registration: "40503", name: "ADYLSON VIEIRA GOMES", position: "MOTORISTA" },
-  { registration: "21143", name: "AGNALDO PAULO DOS SANTOS", position: "MOTORISTA" },
-  { registration: "41438", name: "AGNALDO SABINO DE OLIVEIRA", position: "MOTORISTA" },
-  { registration: "20117", name: "AILTON CLAUDIO DE OLIVEIRA", position: "MOTORISTA" },
-  { registration: "21566", name: "ALAN PESSOA DA SILVA", position: "MOTORISTA" },
-  { registration: "20248", name: "ALAN PESSOA DA SILVA", position: "MOTORISTA" },
-  { registration: "20495", name: "ALBERTO DA SILVA SANTOS", position: "MOTORISTA" },
-  { registration: "40973", name: "ALDEMAR JOSE DA SILVA", position: "MOTORISTA" },
-  { registration: "21949", name: "ALESSANDRA CARDILLI VIEIRA", position: "MOTORISTA" },
-  { registration: "41446", name: "ALESSANDRO DIAS DOS SANTOS", position: "MOTORISTA" },
-  { registration: "22075", name: "ALEX DA COSTA ARAUJO", position: "MOTORISTA" },
-  { registration: "20655", name: "ALEX DOS SANTOS OLIVEIRA", position: "MOTORISTA" },
-  { registration: "20763", name: "ALEX LUCAS DA SILVA", position: "MOTORISTA" },
-  { registration: "20241", name: "ALEX MARQUES DE OLIVEIRA", position: "MOTORISTA" },
-  { registration: "22166", name: "ALEX SANDRO PINHEIRO RIBEIRO", position: "MOTORISTA" },
-  { registration: "21002", name: "ALEXANDRA RODRIGUES MANTOVANI", position: "MOTORISTA" },
-  { registration: "41244", name: "ALEXANDRE AFONSO LANDE", position: "MOTORISTA" },
-  { registration: "22298", name: "ALEXANDRE BATISTA SILVA", position: "MOTORISTA" },
-  { registration: "21575", name: "ALEXANDRE BRITO MESQUITA", position: "MOTORISTA" },
-  { registration: "41293", name: "ALEXANDRE CLARET AMBROSIO", position: "MOTORISTA" },
-  { registration: "41252", name: "ALEXANDRE FERNANDES SOARES", position: "MOTORISTA" },
-  { registration: "40579", name: "ALEXANDRE HENRIQUE CAVALCANTI", position: "MOTORISTA" },
-  { registration: "20290", name: "ALEXSANDRO AUGUSTO DA ROCHA", position: "MOTORISTA" },
-  { registration: "50178", name: "ALEXSANDRO CORDEIRO MACEDO", position: "MOTORISTA" },
-  { registration: "21645", name: "ALEXSANDRO RIBEIRO DE GUSMAO SILVA", position: "MOTORISTA" },
-  { registration: "41161", name: "ALFREDO LUCIO SZYMEL SALVADOR", position: "MOTORISTA" },
-  { registration: "22424", name: "ALISON TUNU DE MELO", position: "MOTORISTA" },
-  { registration: "41463", name: "ALLAN PEDRO RAMOS JERONIMO", position: "MOTORISTA" },
-  { registration: "21261", name: "ALMIR SEBASTIAO DA SILVA", position: "MOTORISTA" },
-  { registration: "20405", name: "ALMIR SEBASTIAO DA SILVA", position: "MOTORISTA" },
-  { registration: "41522", name: "ALVARO DA SILVA CAETANO", position: "MOTORISTA" },
-  { registration: "20529", name: "AMADEUS MARQUES SOBRINHO", position: "MOTORISTA" },
-  { registration: "21216", name: "AMANCIO JOAQUIM DE PAULA", position: "MOTORISTA" },
-  { registration: "41081", name: "AMARILDO DE MELLO", position: "MOTORISTA" },
-  { registration: "40504", name: "AMARO ADAUTO DA SILVA", position: "MOTORISTA" },
-  { registration: "21225", name: "AMARO JOAQUIM DA SILVA", position: "MOTORISTA" },
-  { registration: "41367", name: "ANA CAROLINA DA SILVA OLIVEIRA", position: "MOTORISTA" },
-  { registration: "40976", name: "ANA CLAUDIA SILVA LEMOS", position: "MOTORISTA" },
-  { registration: "40827", name: "ANDERSON CARLOS GOMES DA SILVA", position: "MOTORISTA" },
-  { registration: "50333", name: "ANDERSON CORDEIRO DE MACEDO", position: "MOTORISTA" },
-  { registration: "41391", name: "ANDERSON GALAN RODRIGUES", position: "MOTORISTA" },
-  { registration: "20421", name: "ANDERSON GUARDIANO RODRIGUES", position: "MOTORISTA" },
-  { registration: "20350", name: "ANDERSON JOSE DO VALE", position: "MOTORISTA" },
-  { registration: "40896", name: "ANDERSON PAULO DE ALMEIDA", position: "MOTORISTA" },
-  { registration: "41193", name: "ANDRE CERQUEIRA MASCARENHAS", position: "MOTORISTA" },
-  { registration: "21883", name: "ANDRE LUIS DE ALENCAR SILVA", position: "MOTORISTA" },
-  { registration: "20606", name: "ANDRE LUIZ MORAIS", position: "MOTORISTA" },
-  { registration: "21779", name: "ANDRE LUIZ PITTA SILVA", position: "MOTORISTA" },
-  { registration: "20693", name: "ANDRE LUIZ SANTOS DA SILVA", position: "MOTORISTA" },
-  { registration: "21286", name: "ANDRE SILVA DE ABREU", position: "MOTORISTA" },
-  { registration: "21194", name: "ANDRE SILVA DOS SANTOS", position: "MOTORISTA" },
-  { registration: "41141", name: "ANDREY DE OLIVEIRA VICENTE", position: "MOTORISTA" },
-  { registration: "41309", name: "ANGELO RICARDO CACCAVELLI", position: "MOTORISTA" },
-  { registration: "22502", name: "ANSELMO RODRIGUES DA FONSECA", position: "MOTORISTA" },
-  { registration: "21636", name: "ANTONIO ADEILDO PEREIRA", position: "MOTORISTA" },
-  { registration: "21148", name: "ANTONIO AGUINELO CUSTODIO", position: "MOTORISTA" },
-  { registration: "20388", name: "ANTONIO CARLOS ARAUJO PINTO", position: "MOTORISTA" },
-  { registration: "20850", name: "ANTONIO CARLOS DA SILVA", position: "MOTORISTA" },
-  { registration: "20497", name: "ANTONIO DA SILVA SARAIVA", position: "MOTORISTA" },
-  { registration: "40558", name: "ANTONIO DE PADUA ELOY", position: "MOTORISTA" },
-  { registration: "41425", name: "ANTONIO EDUARDO DE ALMEIDA SILVA", position: "MOTORISTA" },
-  { registration: "20654", name: "ANTONIO EUDES NUNES", position: "MOTORISTA" },
-  { registration: "20535", name: "ANTONIO FELIX MOREIRA", position: "MOTORISTA" },
-  { registration: "20412", name: "ANTONIO HELIO INACIO", position: "MOTORISTA" },
-  { registration: "41102", name: "ANTONIO JOSE DA SILVA FILHO", position: "MOTORISTA" },
-  { registration: "20880", name: "ANTONIO MALACHIAS", position: "MOTORISTA" },
-  { registration: "40856", name: "ANTONIO MARCOS DOS SANTOS", position: "MOTORISTA" },
-  { registration: "21963", name: "ANTONIO MARCOS DOS SANTOS", position: "MOTORISTA" },
-  { registration: "20479", name: "ANTONIO MARCOS EGEA", position: "MOTORISTA" },
-  { registration: "41290", name: "ANTONIO MARCOS SORRINI", position: "MOTORISTA" },
-  { registration: "21641", name: "ANTONIO MARCOS TORRES DOS SANTOS", position: "MOTORISTA" },
-  { registration: "21439", name: "ANTONIO NAZARIO FILHO", position: "MOTORISTA" },
-  { registration: "40638", name: "ANTONIO PEREIRA DE AZEVEDO", position: "MOTORISTA" },
-  { registration: "40635", name: "ANTONIO RIBEIRO SAMPAIO NETO", position: "MOTORISTA" },
-  { registration: "22364", name: "ANTONIO ROBERTO FERNANDES DA SILVA", position: "MOTORISTA" },
-  { registration: "50157", name: "ANTONIO VITORIO DOS SANTOS", position: "MOTORISTA" },
-  { registration: "22085", name: "APARECIDO ALVES DE SANTANA", position: "MOTORISTA" },
-  { registration: "50195", name: "ARGEMIRO BUARQUE DE ALENCAR", position: "MOTORISTA" },
-  { registration: "40137", name: "ARNALDO CORREA", position: "MOTORISTA" },
-  { registration: "21080", name: "ARNALDO MARQUES DE CARVALHO", position: "MOTORISTA" },
-  { registration: "22408", name: "AURINES DE JESUS SOUSA", position: "MOTORISTA" },
-  { registration: "21842", name: "AURIOLANDO BATISTA DE LIMA", position: "MOTORISTA" },
-  { registration: "21207", name: "AYSLAN FELICIO DA SILVA", position: "MOTORISTA" },
-  { registration: "40445", name: "BENEDITO PEDRO DE SOUSA", position: "MOTORISTA" },
-  { registration: "21788", name: "BRUNO ALVES DE PAULA", position: "MOTORISTA" },
-  { registration: "41298", name: "BRUNO DA SILVA ISIDORO", position: "MOTORISTA" },
-  { registration: "21190", name: "BRUNO DA SILVA MIRANDA", position: "MOTORISTA" },
-  { registration: "21674", name: "BRUNO DA SILVA SOARES", position: "MOTORISTA" },
-  { registration: "41294", name: "BRUNO MATIAS REIS", position: "MOTORISTA" },
-  { registration: "21808", name: "BRUNO PEREIRA DE MEDEIROS", position: "MOTORISTA" },
-  { registration: "20723", name: "BRUNO SILIUNAS", position: "MOTORISTA" },
-  { registration: "41473", name: "CAIO FERNANDO DOS SANTOS SILVA", position: "MOTORISTA" },
-  { registration: "41472", name: "CAIQUE BAPTISTA GOMES", position: "MOTORISTA" },
-  { registration: "21206", name: "CAIQUE MEDEIROS SOARES", position: "MOTORISTA" },
-  { registration: "22415", name: "Camila Barbosa da Silva", position: "MOTORISTA" },
-  { registration: "22304", name: "CARLOS ALBERTO DA SILVA", position: "MOTORISTA" },
-  { registration: "50272", name: "CARLOS ALBERTO DA SILVA", position: "MOTORISTA" },
-  { registration: "21936", name: "CARLOS ALBERTO FELIX BRAZ DA SILVA", position: "MOTORISTA" },
-  { registration: "20834", name: "CARLOS ALBERTO GONCALVES FORTES", position: "MOTORISTA" },
-  { registration: "21733", name: "CARLOS ALBERTO NUNES DOS SANTOS", position: "MOTORISTA" },
-  { registration: "20107", name: "CARLOS ALBERTO PINTO PINHEIRO", position: "MOTORISTA" },
-  { registration: "22454", name: "CARLOS EDUARDO DA SILVA", position: "MOTORISTA" },
-  { registration: "20340", name: "CARLOS EDUARDO JESUS TAVARES", position: "MOTORISTA" },
-  { registration: "22522", name: "CARLOS HENRIQUE DE LIMA CAETANO", position: "MOTORISTA" },
-  { registration: "21297", name: "CARLOS HENRIQUE RIBEIRO", position: "MOTORISTA" },
-  { registration: "22787", name: "CARLOS HENRIQUE ROCHA SANTANA", position: "motorista" },
-  { registration: "21776", name: "CARLOS LIMA DE SANTANA", position: "MOTORISTA" },
-  { registration: "41103", name: "CARLOS NASCIMENTO DOS SANTOS", position: "MOTORISTA" },
-  { registration: "20869", name: "CARLOS NUNES DE OLIVEIRA", position: "MOTORISTA" },
-  { registration: "22435", name: "CARLOS PEREIRA DIAS", position: "MOTORISTA" },
-  { registration: "40564", name: "CARLOS ROBERTO DA SILVA", position: "MOTORISTA" },
-  { registration: "21676", name: "CARLOS RUBIN DA APARECIDA", position: "MOTORISTA" },
-  { registration: "22187", name: "CELIO ROBERTO FRANCISCO DO NASCIMENTO", position: "MOTORISTA" },
-  { registration: "41407", name: "CESAR BARROS CAMPOS BARBOSA", position: "MOTORISTA" },
-  { registration: "22195", name: "CESAR HENRIQUE SANTANA SANTOS", position: "MOTORISTA" },
-  { registration: "20305", name: "CICERO AUGUSTO SILVA", position: "MOTORISTA" },
-  { registration: "40532", name: "CICERO VERANILSON FREITAS DE SOUZA", position: "MOTORISTA" },
-  { registration: "41378", name: "CINTIA APARECIDA DANTAS", position: "MOTORISTA" },
-  { registration: "22010", name: "CLAUDEMIR DOS ANJOS DA SILVA", position: "MOTORISTA" },
-  { registration: "22362", name: "CLAUDINEI DE JESUS ELIDIO", position: "MOTORISTA" },
-  { registration: "20866", name: "CLAUDINEI JOAO DA SILVA", position: "MOTORISTA" },
-  { registration: "22336", name: "CLAUDINEY DAVI FERREIRA DA SILVA", position: "MOTORISTA" },
-  { registration: "40925", name: "CLAUDINEY PEREIRA GILO", position: "MOTORISTA" },
-  // Adding all other employees would make this file too large - limiting to 150 records for response brevity
-  // In a real implementation, we would add all records
-  // The rest of the implementation stays the same
+  // ... mais funcionários
 ];
 
-export const findEmployeeByRegistration = (registration: string): Employee | null => {
-  const employee = EMPLOYEES_DATA.find(emp => emp.registration === registration);
-  return employee || null;
+export const findEmployeeByRegistration = async (registration: string): Promise<Employee | null> => {
+  try {
+    // Tenta buscar do Supabase
+    const employee = await supabaseEmployeeService.getEmployeeByRegistration(registration);
+    
+    if (employee) {
+      return {
+        registration: employee.matricula,
+        name: employee.nome,
+        position: employee.cargo
+      };
+    }
+    
+    // Fallback para buscar do cache local
+    const cachedEmployee = EMPLOYEES_CACHE.find(emp => emp.registration === registration);
+    return cachedEmployee || null;
+  } catch (error) {
+    console.error("Erro ao buscar funcionário:", error);
+    
+    // Fallback para buscar do cache local
+    const cachedEmployee = EMPLOYEES_CACHE.find(emp => emp.registration === registration);
+    return cachedEmployee || null;
+  }
 };
 
-export const getAllEmployees = (): Employee[] => {
-  return [...EMPLOYEES_DATA];
+export const getAllEmployees = async (): Promise<Employee[]> => {
+  try {
+    // Tenta buscar do Supabase
+    const employees = await supabaseEmployeeService.getAllEmployees();
+    
+    return employees.map(emp => ({
+      registration: emp.matricula,
+      name: emp.nome,
+      position: emp.cargo
+    }));
+  } catch (error) {
+    console.error("Erro ao buscar funcionários:", error);
+    
+    // Fallback para o cache local
+    return [...EMPLOYEES_CACHE];
+  }
 };
 
 // In a production environment, this would be a function to import employee data from Excel
