@@ -161,7 +161,6 @@ export const updateAttendanceRecord = async (
 export const markAsAttended = async (id: string): Promise<boolean> => {
   try {
     // Implementação para marcar como atendido no Supabase
-    // Esta é uma função que precisará ser implementada no futuro
     return await supabaseAttendanceService.markAsAttended(Number(id));
   } catch (error) {
     console.error(`Erro ao marcar atendimento ${id} como atendido:`, error);
@@ -173,9 +172,7 @@ export const markAsAttended = async (id: string): Promise<boolean> => {
 export const deleteAttendanceRecord = async (id: string): Promise<boolean> => {
   try {
     // Implementação para excluir o registro no Supabase
-    // Esta é uma função que precisará ser implementada no futuro
-    console.log(`Exclusão do atendimento ${id}`);
-    return true;
+    return await supabaseAttendanceService.deleteAttendance(Number(id));
   } catch (error) {
     console.error(`Erro ao excluir atendimento ${id}:`, error);
     return false;

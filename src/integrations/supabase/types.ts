@@ -9,7 +9,92 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      atendimentos: {
+        Row: {
+          atendido: boolean
+          atendido_em: string | null
+          cargo: string
+          horario: string
+          id: number
+          matricula: string
+          motivo: string
+          nome: string
+          setor_id: number
+          usuario_id: number | null
+        }
+        Insert: {
+          atendido?: boolean
+          atendido_em?: string | null
+          cargo: string
+          horario?: string
+          id?: number
+          matricula: string
+          motivo: string
+          nome: string
+          setor_id: number
+          usuario_id?: number | null
+        }
+        Update: {
+          atendido?: boolean
+          atendido_em?: string | null
+          cargo?: string
+          horario?: string
+          id?: number
+          matricula?: string
+          motivo?: string
+          nome?: string
+          setor_id?: number
+          usuario_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atendimentos_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funcionarios: {
+        Row: {
+          cargo: string
+          id: number
+          matricula: string
+          nome: string
+        }
+        Insert: {
+          cargo: string
+          id?: number
+          matricula: string
+          nome: string
+        }
+        Update: {
+          cargo?: string
+          id?: number
+          matricula?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      setores: {
+        Row: {
+          codigo: number
+          id: number
+          nome: string
+        }
+        Insert: {
+          codigo: number
+          id?: number
+          nome: string
+        }
+        Update: {
+          codigo?: number
+          id?: number
+          nome?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
