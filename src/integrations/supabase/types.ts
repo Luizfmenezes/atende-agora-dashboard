@@ -77,6 +77,38 @@ export type Database = {
         }
         Relationships: []
       }
+      permissoes: {
+        Row: {
+          can_create: boolean
+          delete: boolean
+          edit: boolean
+          usuario_id: number
+          view: boolean
+        }
+        Insert: {
+          can_create?: boolean
+          delete?: boolean
+          edit?: boolean
+          usuario_id: number
+          view?: boolean
+        }
+        Update: {
+          can_create?: boolean
+          delete?: boolean
+          edit?: boolean
+          usuario_id?: number
+          view?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permissoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       setores: {
         Row: {
           codigo: number
@@ -92,6 +124,30 @@ export type Database = {
           codigo?: number
           id?: number
           nome?: string
+        }
+        Relationships: []
+      }
+      usuarios: {
+        Row: {
+          created_at: string | null
+          id: number
+          password: string
+          role: string
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          password: string
+          role: string
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          password?: string
+          role?: string
+          username?: string
         }
         Relationships: []
       }

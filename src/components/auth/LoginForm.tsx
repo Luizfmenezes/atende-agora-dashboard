@@ -10,14 +10,23 @@ export const LoginForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     
     try {
-      await login(username, password);
+      const success = await login(username, password);
+      
+      if (!success) {
+        setError("Usuário ou senha incorretos. Por favor, tente novamente.");
+      }
+    } catch (err) {
+      setError("Ocorreu um erro ao fazer login. Por favor, tente novamente mais tarde.");
+      console.error("Erro de login:", err);
     } finally {
       setIsLoading(false);
     }
@@ -33,6 +42,11 @@ export const LoginForm = () => {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
+          {error && (
+            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
+              {error}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="username">Usuário</Label>
             <Input
