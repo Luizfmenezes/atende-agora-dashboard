@@ -184,10 +184,19 @@ export const userService = {
   // Buscar usuário por ID
   async getUserById(id: string): Promise<User | null> {
     try {
+      // Converter o ID de string para número
+      const numericId = parseInt(id, 10);
+      
+      // Verificar se a conversão foi bem-sucedida
+      if (isNaN(numericId)) {
+        console.error(`ID inválido: ${id} não é um número válido`);
+        return null;
+      }
+      
       const { data: user, error: userError } = await supabase
         .from('usuarios')
         .select('*')
-        .eq('id', id)
+        .eq('id', numericId)
         .single();
       
       if (userError || !user) {
@@ -218,4 +227,3 @@ export const userService = {
 export const authenticateWithSupabase = authService.authenticateWithSupabase;
 export const createUserInSupabase = userService.createUserInSupabase;
 export const getUsersFromSupabase = userService.getAllUsers;
-
