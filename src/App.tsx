@@ -31,13 +31,14 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route 
-              path="/" 
+              path="/dashboard" 
               element={
                 <PrivateRoute>
                   <Dashboard />
                 </PrivateRoute>
               } 
             />
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
