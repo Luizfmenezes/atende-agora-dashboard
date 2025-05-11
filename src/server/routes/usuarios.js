@@ -1,106 +1,122 @@
-
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const db = require('../db');
+const { sql, poolConnect } = require('../db');
 
-// Get all users
-router.get('/', (req, res) => {
+// GET all users
+router.get('/', async (req, res) => {
   try {
-    const usuarios = db.prepare('SELECT id, matricula, nome, cargo, setor FROM usuarios').all();
-    res.json(usuarios);
+    await poolConnect;
+    const result = await poolConnect.request().query(`
+      SELECT id, matricula, nome, cargo, setor FROM usuarios
+    `);
+    res.json(result.recordset);
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Erro ao buscar usuários:', error);
     res.status(500).json({ error: 'Erro ao buscar usuários' });
   }
 });
 
-// Get user by ID
-router.get('/:id', (req, res) => {
+// GET user by ID
+router.get('/:id', async (req, res) => {
   try {
-    const usuario = db
-      .prepare('SELECT id, matricula, nome, cargo, setor FROM usuarios WHERE id = ?')
-      .get(req.params.id);
-    
-    if (!usuario) {
+    await poolConnect;
+    const result = await poolConnect
+      .request()
+      .input('id', sql.Int, req.params.id)
+      .query(`
+        SELECT id, matricula, nome, cargo, setor FROM usuarios WHERE id = @id
+      `);
+
+    if (result.recordset.length === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
-    
-    res.json(usuario);
+
+    res.json(result.recordset[0]);
   } catch (error) {
-    console.error('Error fetching user:', error);
+    console.error('Erro ao buscar usuário:', error);
     res.status(500).json({ error: 'Erro ao buscar usuário' });
   }
 });
 
-// Create new user
+// POST create user
 router.post('/', async (req, res) => {
   try {
     const { matricula, nome, cargo, setor, senha } = req.body;
-    
+
     if (!matricula || !nome || !cargo || !setor || !senha) {
       return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
     }
-    
-    // Check if user already exists
-    const existingUser = db.prepare('SELECT id FROM usuarios WHERE matricula = ?').get(matricula);
-    
-    if (existingUser) {
+
+    await poolConnect;
+
+    // Verifica matrícula duplicada
+    const existing = await poolConnect
+      .request()
+      .input('matricula', sql.VarChar, matricula)
+      .query('SELECT id FROM usuarios WHERE matricula = @matricula');
+
+    if (existing.recordset.length > 0) {
       return res.status(400).json({ error: 'Matrícula já cadastrada' });
     }
-    
-    // Hash password
-    const saltRounds = 10;
-    const hashedSenha = await bcrypt.hash(senha, saltRounds);
-    
-    // Insert new user
-    const result = db
-      .prepare('INSERT INTO usuarios (matricula, nome, cargo, setor, senha) VALUES (?, ?, ?, ?, ?)')
-      .run(matricula, nome, cargo, setor, hashedSenha);
-    
+
+    const hashedSenha = await bcrypt.hash(senha, 10);
+
+    // Inserção
+    const result = await poolConnect
+      .request()
+      .input('matricula', sql.VarChar, matricula)
+      .input('nome', sql.VarChar, nome)
+      .input('cargo', sql.VarChar, cargo)
+      .input('setor', sql.VarChar, setor)
+      .input('senha', sql.VarChar, hashedSenha)
+      .query(`
+        INSERT INTO usuarios (matricula, nome, cargo, setor, senha)
+        OUTPUT INSERTED.id
+        VALUES (@matricula, @nome, @cargo, @setor, @senha)
+      `);
+
     res.status(201).json({
-      id: result.lastInsertRowid,
+      id: result.recordset[0].id,
       matricula,
       nome,
       cargo,
       setor
     });
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error('Erro ao criar usuário:', error);
     res.status(500).json({ error: 'Erro ao criar usuário' });
   }
 });
 
-// User authentication
+// POST login
 router.post('/login', async (req, res) => {
   try {
     const { matricula, senha } = req.body;
-    
+
     if (!matricula || !senha) {
       return res.status(400).json({ error: 'Matrícula e senha são obrigatórios' });
     }
-    
-    // Find user
-    const user = db.prepare('SELECT * FROM usuarios WHERE matricula = ?').get(matricula);
-    
-    if (!user) {
-      return res.status(401).json({ error: 'Credenciais inválidas' });
-    }
-    
-    // Verify password
-    const passwordMatch = await bcrypt.compare(senha, user.senha);
-    
-    if (!passwordMatch) {
-      return res.status(401).json({ error: 'Credenciais inválidas' });
-    }
-    
-    // Return user data (without password)
-    const { senha: _, ...userData } = user;
-    res.json(userData);
+
+    await poolConnect;
+    const result = await poolConnect
+      .request()
+      .input('matricula', sql.VarChar, matricula)
+      .query('SELECT * FROM usuarios WHERE matricula = @matricula');
+
+    const user = result.recordset[0];
+    if (!user) return res.status(401).json({ error: 'Credenciais inválidas' });
+
+    const isValid = await bcrypt.compare(senha, user.senha);
+    if (!isValid) return res.status(401).json({ error: 'Credenciais inválidas' });
+
+    delete user.senha;
+    res.json(user);
   } catch (error) {
-    console.error('Error during login:', error);
+    console.error('Erro no login:', error);
     res.status(500).json({ error: 'Erro ao fazer login' });
   }
 });
 
 module.exports = router;
+

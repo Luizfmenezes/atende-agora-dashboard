@@ -1,52 +1,56 @@
+import sql from 'mssql';
 
-const path = require('path');
-const fs = require('fs');
-const BetterSqlite3 = require('better-sqlite3');
-
-// Ensure the data directory exists
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-// Database file path
-const dbPath = path.join(dataDir, 'banco.db');
-
-// Initialize database connection
-const db = new BetterSqlite3(dbPath);
-
-// Create tables if they don't exist
-const initDb = () => {
-  // Create usuarios table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS usuarios (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      matricula TEXT UNIQUE,
-      nome TEXT,
-      cargo TEXT,
-      setor TEXT,
-      senha TEXT
-    )
-  `);
-
-  // Create atendimentos table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS atendimentos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      usuario_id INTEGER,
-      horario DATETIME DEFAULT CURRENT_TIMESTAMP,
-      setor TEXT,
-      motivo TEXT,
-      attended BOOLEAN DEFAULT 0,
-      attendedAt DATETIME,
-      FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-    )
-  `);
-  
-  console.log('Database initialized successfully.');
+// Configuração da conexão com SQL Server
+const config = {
+  user: 'seu_usuario',
+  password: 'sua_senha',
+  server: 'localhost',
+  database: 'seu_banco',
+  options: {
+    encrypt: true, // obrigatório no Azure
+    trustServerCertificate: true // necessário para conexões locais
+  }
 };
 
-// Initialize the database
+// Função para inicializar o banco de dados
+const initDb = async () => {
+  try {
+    const pool = await sql.connect(config);
+
+    // Criar tabela usuarios
+    await pool.request().query(`
+      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='usuarios' AND xtype='U')
+      CREATE TABLE usuarios (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        matricula NVARCHAR(50) UNIQUE,
+        nome NVARCHAR(100),
+        cargo NVARCHAR(100),
+        setor NVARCHAR(100),
+        senha NVARCHAR(100)
+      )
+    `);
+
+    // Criar tabela atendimentos
+    await pool.request().query(`
+      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='atendimentos' AND xtype='U')
+      CREATE TABLE atendimentos (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        usuario_id INT,
+        horario DATETIME DEFAULT GETDATE(),
+        setor NVARCHAR(100),
+        motivo NVARCHAR(255),
+        attended BIT DEFAULT 0,
+        attendedAt DATETIME,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+      )
+    `);
+
+    console.log('Banco de dados SQL Server inicializado com sucesso.');
+  } catch (err) {
+    console.error('Erro ao inicializar o banco de dados:', err);
+  }
+};
+
 initDb();
 
-module.exports = db;
+export default sql;
