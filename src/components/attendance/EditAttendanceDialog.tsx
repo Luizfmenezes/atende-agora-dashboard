@@ -27,7 +27,7 @@ export const EditAttendanceDialog = ({
   onEditSelectChange,
   onSubmit
 }: EditAttendanceDialogProps) => {
-  return (
+  return (                  
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -44,7 +44,7 @@ export const EditAttendanceDialog = ({
               required
             />
           </div>
-          
+              
           <div className="space-y-2">
             <Label htmlFor="name">Nome</Label>
             <Input
