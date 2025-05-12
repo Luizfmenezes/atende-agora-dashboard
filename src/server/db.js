@@ -2,10 +2,10 @@ import sql from 'mssql';
 
 // Configuração da conexão com SQL Server
 const config = {
-  user: 'seu_usuario',
-  password: 'sua_senha',
-  server: 'localhost',
-  database: 'seu_banco',
+  user: 'SRVUSER01',
+  password: 'Felipe51917610@',
+  server: 'SRVSQL',
+  database: 'BASE_ATENDE',
   options: {
     encrypt: true, // obrigatório no Azure
     trustServerCertificate: true // necessário para conexões locais
