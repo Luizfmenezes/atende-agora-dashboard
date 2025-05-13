@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { createUser } from "@/lib/auth";
-import { getUsersFromSupabase } from "@/lib/userService";
+import { getAllUsers } from "@/lib/userService";
 import { UserRole, Permission, User } from "@/lib/types";
 import { SectorPhoneManagement } from "@/components/admin/SectorPhoneManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
