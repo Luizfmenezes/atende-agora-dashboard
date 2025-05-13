@@ -1,57 +1,68 @@
-
+// src/lib/attendanceService.ts
 import { Attendance, DashboardStats } from "./types";
-import { attendanceService as supabaseAttendanceService } from "./supabaseService";
+// Alterar a importação para o novo serviço SQL Server
+import { 
+  attendanceService as sqlAttendanceService, 
+  sectorService as sqlSectorService,
+  // A função de mapeamento agora está no sqlServerService, se precisarmos dela diretamente
+  // ou se as funções do sqlAttendanceService já retornarem o tipo `Attendance` da aplicação.
+  // Vamos assumir que as funções do sqlAttendanceService já podem retornar o tipo `Attendance`
+  // ou que o mapeamento é feito dentro delas ou usando a mapToAppAttendanceModel.
+} from "./sqlServerService"; 
 
-// Função auxiliar para converter formato de data
+// Função auxiliar para converter formato de data (mantida, pois é lógica da aplicação)
 const formatDateForQuery = (dateString?: string) => {
   if (!dateString) return undefined;
-  return new Date(dateString).toISOString();
+  // O sqlServerService espera datas ISO string para filtros, então esta conversão é útil.
+  return new Date(dateString).toISOString(); 
 };
 
 // Obter todos os registros de atendimento
 export const getAttendanceRecords = async (filters?: {
   startDate?: string;
   endDate?: string;
-  sector?: string;
-  status?: string;
+  sector?: string; // Pode ser nome ou ID, o sqlServerService.getAllAttendances lida com isso
+  status?: string; // "waiting" ou "attended"
   name?: string;
   registration?: string;
 }): Promise<Attendance[]> => {
   try {
-    const supabaseFilters = {
+    const sqlFilters = {
       startDate: filters?.startDate ? formatDateForQuery(filters.startDate) : undefined,
       endDate: filters?.endDate ? formatDateForQuery(filters.endDate) : undefined,
       sector: filters?.sector,
+      // O filtro de status era aplicado em memória. Vamos mantê-lo assim por enquanto
+      // ou considerar movê-lo para a query SQL no sqlServerService se for mais eficiente.
     };
 
-    const records = await supabaseAttendanceService.getAllAttendances(supabaseFilters);
+    // Chama a função do novo serviço SQL Server
+    const recordsFromDb = await sqlAttendanceService.getAllAttendances(sqlFilters);
     
-    // Mapeando para o formato do aplicativo e aplicando filtros adicionais
-    let mapped = records.map(supabaseAttendanceService.mapToAttendanceModel);
+    // Mapeando para o formato da aplicação usando a função de mapeamento do sqlServerService
+    let mappedRecords = recordsFromDb.map(sqlAttendanceService.mapToAppAttendanceModel);
     
-    // Filtro por nome (aplicado após buscar do Supabase)
+    // Filtros em memória (mantidos do código original)
     if (filters?.name) {
       const searchName = filters.name.toLowerCase();
-      mapped = mapped.filter(record => record.name.toLowerCase().includes(searchName));
+      mappedRecords = mappedRecords.filter(record => record.name.toLowerCase().includes(searchName));
     }
     
-    // Filtro por matrícula (aplicado após buscar do Supabase)
     if (filters?.registration) {
       const searchReg = filters.registration.toLowerCase();
-      mapped = mapped.filter(record => record.registration.toLowerCase().includes(searchReg));
+      mappedRecords = mappedRecords.filter(record => record.registration.toLowerCase().includes(searchReg));
     }
     
-    // Filtro por status (aplicado após buscar do Supabase)
-    if (filters?.status === 'waiting') {
-      mapped = mapped.filter(record => !record.attended);
-    } else if (filters?.status === 'attended') {
-      mapped = mapped.filter(record => record.attended);
+    if (filters?.status === "waiting") {
+      mappedRecords = mappedRecords.filter(record => !record.attended);
+    } else if (filters?.status === "attended") {
+      mappedRecords = mappedRecords.filter(record => record.attended);
     }
     
-    return mapped;
+    return mappedRecords;
   } catch (error) {
-    console.error("Erro ao buscar registros de atendimento:", error);
-    return [];
+    console.error("Erro ao buscar registros de atendimento (SQL Server):", error);
+    // Considerar lançar o erro ou retornar um array vazio dependendo da política de erro da aplicação
+    throw error; // ou return [];
   }
 };
 
@@ -66,15 +77,17 @@ export const getVisibleAttendanceRecords = async (filters?: {
 }): Promise<Attendance[]> => {
   const records = await getAttendanceRecords(filters);
   
-  // Filtrar apenas registros não atendidos ou registros atendidos recentemente
+  // Lógica de filtragem para visibilidade (mantida)
   return records.filter(record => {
     if (!record.attended) return true;
     
-    // Mostra registros atendidos apenas por um período limitado
-    if (record.hideAfter) {
-      const hideTime = new Date(record.attendedAt || record.createdAt);
-      hideTime.setSeconds(hideTime.getSeconds() + record.hideAfter);
-      return new Date() < hideTime;
+    if (record.attendedAt) { // Certificar que attendedAt existe
+        // A lógica de hideAfter precisa ser definida ou recuperada para o tipo Attendance
+        // Supondo que hideAfter (em segundos) é uma propriedade de Attendance
+        const hideAfterSeconds = record.hideAfter || 40; // Default se não definido
+        const attendedTime = new Date(record.attendedAt);
+        const hideTime = new Date(attendedTime.getTime() + hideAfterSeconds * 1000);
+        return new Date() < hideTime;
     }
     
     return false;
@@ -84,17 +97,19 @@ export const getVisibleAttendanceRecords = async (filters?: {
 // Obter estatísticas para o dashboard
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
-    const allRecords = await getAttendanceRecords();
+    // Considerar otimizar isso com queries SQL agregadas no sqlServerService
+    // em vez de buscar todos os registos e filtrar em memória.
+    const allRecords = await getAttendanceRecords(); // Usa a função já adaptada
     const waiting = allRecords.filter(record => !record.attended).length;
     const attended = allRecords.filter(record => record.attended).length;
     
     return {
       waiting,
       attended,
-      remaining: waiting
+      remaining: waiting // Ou outra lógica para "remaining"
     };
   } catch (error) {
-    console.error("Erro ao obter estatísticas do dashboard:", error);
+    console.error("Erro ao obter estatísticas do dashboard (SQL Server):", error);
     return {
       waiting: 0,
       attended: 0,
@@ -108,51 +123,54 @@ export const createAttendanceRecord = async (data: {
   registration: string;
   name: string;
   position: string;
-  sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO";
+  sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO"; // Manter este tipo se for usado na UI
   reason: string;
 }): Promise<Attendance> => {
   try {
-    // Buscar o ID do setor pelo nome
-    const { sectorService } = await import("./supabaseService");
-    const sector = await sectorService.getSectorByName(data.sector);
+    // Buscar o ID do setor pelo nome usando o novo serviço
+    const sectorData = await sqlSectorService.getSectorByName(data.sector);
     
-    if (!sector) {
+    if (!sectorData) {
       throw new Error(`Setor não encontrado: ${data.sector}`);
     }
     
-    // Criar o registro no Supabase
-    const attendance = await supabaseAttendanceService.createAttendance({
+    // Criar o registro usando o novo serviço SQL Server
+    const newAttendanceData = {
       matricula: data.registration,
       nome: data.name,
       cargo: data.position,
-      setor_id: sector.id,
-      motivo: data.reason
-    });
+      setor_id: sectorData.id, // Usar o ID do setor encontrado
+      motivo: data.reason,
+      // usuario_id pode ser adicionado aqui se fizer parte do `data` ou contexto
+    };
     
-    if (!attendance) {
-      throw new Error("Erro ao criar atendimento");
+    const createdDbRecord = await sqlAttendanceService.createAttendance(newAttendanceData);
+    
+    if (!createdDbRecord) {
+      throw new Error("Erro ao criar atendimento no SQL Server");
     }
     
-    // Retornar o atendimento no formato da aplicação
-    return supabaseAttendanceService.mapToAttendanceModel(attendance);
+    // Mapear para o formato da aplicação
+    return sqlAttendanceService.mapToAppAttendanceModel(createdDbRecord);
   } catch (error) {
-    console.error("Erro ao criar registro de atendimento:", error);
+    console.error("Erro ao criar registro de atendimento (SQL Server):", error);
     throw error;
   }
 };
 
-// Atualizar registro de atendimento
+// Atualizar registro de atendimento (placeholder mantido, adaptar se necessário)
 export const updateAttendanceRecord = async (
   id: string,
   data: Partial<Attendance>
 ): Promise<boolean> => {
   try {
-    // Implementação para atualizar os dados no Supabase
-    // Esta é uma função que precisará ser implementada no futuro
-    console.log(`Atualização do atendimento ${id} com dados:`, data);
-    return true;
+    // Esta função precisaria ser implementada no sqlServerService.ts
+    // e depois chamada aqui. Ex: await sqlAttendanceService.updateAttendance(Number(id), data_adaptada_para_sql);
+    console.warn(`Placeholder: Atualização do atendimento ${id} com dados:`, data, "- Implementar no sqlServerService");
+    // Por agora, retorna true como no original
+    return true; 
   } catch (error) {
-    console.error(`Erro ao atualizar atendimento ${id}:`, error);
+    console.error(`Erro ao atualizar atendimento ${id} (SQL Server):`, error);
     return false;
   }
 };
@@ -160,10 +178,9 @@ export const updateAttendanceRecord = async (
 // Marcar como atendido
 export const markAsAttended = async (id: string): Promise<boolean> => {
   try {
-    // Implementação para marcar como atendido no Supabase
-    return await supabaseAttendanceService.markAsAttended(Number(id));
+    return await sqlAttendanceService.markAsAttended(Number(id));
   } catch (error) {
-    console.error(`Erro ao marcar atendimento ${id} como atendido:`, error);
+    console.error(`Erro ao marcar atendimento ${id} como atendido (SQL Server):`, error);
     return false;
   }
 };
@@ -171,26 +188,43 @@ export const markAsAttended = async (id: string): Promise<boolean> => {
 // Excluir registro de atendimento
 export const deleteAttendanceRecord = async (id: string): Promise<boolean> => {
   try {
-    // Implementação para excluir o registro no Supabase
-    return await supabaseAttendanceService.deleteAttendance(Number(id));
+    return await sqlAttendanceService.deleteAttendance(Number(id));
   } catch (error) {
-    console.error(`Erro ao excluir atendimento ${id}:`, error);
+    console.error(`Erro ao excluir atendimento ${id} (SQL Server):`, error);
     return false;
   }
 };
 
+// Buscar um atendimento específico
 export const findAttendanceRecord = async (id: string): Promise<Attendance | undefined> => {
   try {
-    const records = await getAttendanceRecords();
-    return records.find(record => record.id === id);
+    const numericId = Number(id);
+    if (isNaN(numericId)) {
+        console.error("ID inválido para findAttendanceRecord");
+        return undefined;
+    }
+    const dbRecord = await sqlAttendanceService.getAttendanceById(numericId);
+    if (dbRecord) {
+        return sqlAttendanceService.mapToAppAttendanceModel(dbRecord);
+    }
+    return undefined;
   } catch (error) {
-    console.error(`Error finding attendance record ${id}:`, error);
+    console.error(`Erro ao buscar atendimento ${id} (SQL Server):`, error);
     return undefined;
   }
 };
 
+// A função getSectorWhatsAppNumber não interage com a base de dados, mantida como está.
 export const getSectorWhatsAppNumber = (sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO") => {
-  const sectorPhoneNumbers = JSON.parse(localStorage.getItem("sectorPhoneNumbers") || "[]");
-  const sectorNumbers = sectorPhoneNumbers.find((s: { sector: string; phoneNumbers: any[]; }) => s.sector === sector);
-  return sectorNumbers ? sectorNumbers.phoneNumbers : [];
+  const item = localStorage.getItem("sectorPhoneNumbers");
+  if (!item) return [];
+  try {
+    const sectorPhoneNumbers = JSON.parse(item);
+    const sectorInfo = sectorPhoneNumbers.find((s: { sector: string; phoneNumbers: any[]; }) => s.sector === sector);
+    return sectorInfo ? sectorInfo.phoneNumbers : [];
+  } catch (e) {
+    console.error("Erro ao parsear sectorPhoneNumbers do localStorage:", e);
+    return [];
+  }
 };
+
