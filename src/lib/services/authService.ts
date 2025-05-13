@@ -1,23 +1,24 @@
-CREATE PROCEDURE usp_AutenticarUsuario
-    @Username VARCHAR(100),
-    @Password VARCHAR(100) -- Em produção, deveria ser um hash
-AS
-BEGIN
-    SET NOCOUNT ON;
+const pool = await sql.connect(dbConfig);
+const result = await pool
+  .request()
+  .input('Username', sql.VarChar, username)
+  .input('Password', sql.VarChar, password)
+  .execute('usp_AutenticarUsuario');
 
-    -- Verificar se o usuário existe e a senha confere
-    SELECT 
-        u.id AS user_id,
-        u.username,
-        u.role,
-        p.view,
-        p.edit,
-        p.delete,
-        p.can_create
-    FROM 
-        usuarios u
-    LEFT JOIN 
-        permissoes p ON u.id = p.usuario_id
-    WHERE 
-        u.username = @Username AND u.password = @Password;
-END;
+const user = result.recordset[0];
+if (!user) {
+  return null;
+}
+
+// Estrutura no formato esperado pela aplicação
+return {
+  id: user.user_id.toString(),
+  username: user.username,
+  role: user.role,
+  permissions: {
+    view: user.view,
+    edit: user.edit,
+    delete: user.delete,
+    create: user.can_create
+  }
+};

@@ -9,6 +9,13 @@ export const getAllAttendances = async (filters?: {
   sector?: string;
   status?: "attended" | "waiting";
 }): Promise<Attendance[]> => {
+
+  export const getAttendances = async () => {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query('SELECT * FROM Attendances');
+    return result.recordset;
+  };
+  
   try {
     const pool = await sql.connect(dbConfig);
 

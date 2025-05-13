@@ -1,0 +1,8 @@
+[build]
+  command = "bun run build && bun run api"
+  publish = "dist"
+
+[[redirects]]
+  from = "/api/*"
+  to = "http://localhost:3001/:splat"
+  status = 200
