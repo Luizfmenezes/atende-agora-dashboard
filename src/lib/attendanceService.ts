@@ -33,83 +33,16 @@ const mapToAttendanceModel = (record: any): Attendance => ({
   hideAfter: record.hide_after
 });
 
-// Obter todos os registros de atendimento
-export const getAttendanceRecords = async (filters?: {
-  startDate?: string;
-  endDate?: string;
-  sector?: string;
-  status?: string;
-  name?: string;
-  registration?: string;
-}): Promise<Attendance[]> => {
-  try {
-    const pool = await sql.connect(dbConfig);
-    
-    let query = `
-      SELECT 
-        a.id,
-        a.registration,
-        a.name,
-        a.position,
-        s.name AS sector,
-        a.reason,
-        a.created_at,
-        a.attended,
-        a.attended_at,
-        a.hide_after
-      FROM 
-        Attendances a
-      JOIN 
-        Sectors s ON a.sector_id = s.id
-      WHERE 1=1
-    `;
-    
-    const params: { name: string, type: any, value: any }[] = [];
-    
-    if (filters?.startDate) {
-      query += ' AND a.created_at >= @startDate';
-      params.push({ name: 'startDate', type: sql.DateTime, value: formatDateForQuery(filters.startDate) });
-    }
-    
-    if (filters?.endDate) {
-      query += ' AND a.created_at <= @endDate';
-      params.push({ name: 'endDate', type: sql.DateTime, value: formatDateForQuery(filters.endDate) });
-    }
-    
-    if (filters?.sector) {
-      query += ' AND s.name = @sector';
-      params.push({ name: 'sector', type: sql.NVarChar, value: filters.sector });
-    }
-    
-    if (filters?.status === 'waiting') {
-      query += ' AND a.attended = 0';
-    } else if (filters?.status === 'attended') {
-      query += ' AND a.attended = 1';
-    }
-    
-    if (filters?.name) {
-      query += ' AND a.name LIKE @name';
-      params.push({ name: 'name', type: sql.NVarChar, value: `%${filters.name}%` });
-    }
-    
-    if (filters?.registration) {
-      query += ' AND a.registration LIKE @registration';
-      params.push({ name: 'registration', type: sql.VarChar, value: `%${filters.registration}%` });
-    }
-    
-    query += ' ORDER BY a.created_at DESC';
-    
-    const request = pool.request();
-    params.forEach(param => request.input(param.name, param.type, param.value));
-    
-    const result = await request.query(query);
-    await pool.close();
-    
-    return result.recordset.map(mapToAttendanceModel);
-  } catch (error) {
-    console.error("Erro ao buscar registros de atendimento:", error);
-    return [];
-  }
+// Substitua todas as chamadas diretas ao SQL por chamadas API
+export const getAttendanceRecords = async (filters?: any) => {
+  const response = await fetch('/api/attendances', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(filters),
+  });
+  return await response.json();
 };
 
 // Registros visíveis na tela principal

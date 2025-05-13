@@ -1,34 +1,24 @@
+import express from 'express';
+import sql from 'mssql';
+import { dbConfig } from './dbConfig';
 
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-const bodyParser = require('body-parser');
-const path = require('path');
-
-// Import routes
-const usuariosRoutes = require('./routes/usuarios');
-const atendimentosRoutes = require('./routes/atendimentos');
-
-// Initialize express app
 const app = express();
+app.use(express.json());
+
+app.post('/api/attendances', async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    // Implemente sua query SQL aqui com os filtros de req.body
+    const result = await pool.request()
+      .input('startDate', sql.DateTime, req.body.startDate)
+      // ... outros parâmetros
+      .query('SELECT * FROM Attendances WHERE created_at >= @startDate');
+    
+    res.json(result.recordset);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 3001;
-
-// Middleware
-app.use(cors());
-app.use(morgan('dev')); // Request logging
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// Routes
-app.use('/api/usuarios', usuariosRoutes);
-app.use('/api/atendimentos', atendimentosRoutes);
-
-// Root route
-app.get('/', (req, res) => {
-  res.json({ message: 'API do Sistema de Atendimento de Recepção' });
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
