@@ -1,87 +1,108 @@
+import sql from "mssql";
+import { Attendance } from "./types";
+import { dbConfig } from "@/config/dbConfig";
 
-import { Attendance, User } from "./types";
+// Buscar atendimentos com filtros
+export const getAllAttendances = async (filters?: {
+  startDate?: string;
+  endDate?: string;
+  sector?: string;
+  status?: "attended" | "waiting";
+}): Promise<Attendance[]> => {
+  try {
+    const pool = await sql.connect(dbConfig);
 
-const API_URL = "http://localhost:3001/api";
+    let query = "SELECT * FROM atendimentos WHERE 1=1";
+    const request = pool.request();
 
-// Helper function for API requests
-async function fetchAPI<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    ...options,
-  });
+    if (filters?.startDate) {
+      query += " AND data_hora >= @StartDate";
+      request.input("StartDate", sql.DateTime, filters.startDate);
+    }
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      error: "Erro desconhecido",
-    }));
-    throw new Error(error.error || "Erro na requisição");
+    if (filters?.endDate) {
+      query += " AND data_hora <= @EndDate";
+      request.input("EndDate", sql.DateTime, filters.endDate);
+    }
+
+    if (filters?.sector && filters.sector !== "all") {
+      query += " AND setor = @Sector";
+      request.input("Sector", sql.VarChar, filters.sector);
+    }
+
+    if (filters?.status && filters.status !== "all") {
+      const status = filters.status === "attended" ? 1 : 0;
+      query += " AND atendido = @Status";
+      request.input("Status", sql.Bit, status);
+    }
+
+    const result = await request.query(query);
+    return result.recordset;
+  } catch (error) {
+    console.error("Erro ao buscar atendimentos:", error);
+    return [];
   }
-
-  return response.json();
-}
-
-// Attendance API functions
-export const attendanceAPI = {
-  getAll: (filters?: {
-    startDate?: string;
-    endDate?: string;
-    sector?: string;
-    status?: "attended" | "waiting" | "all";
-  }) => {
-    const queryParams = new URLSearchParams();
-    
-    if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-    if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-    if (filters?.sector && filters.sector !== "all") queryParams.append("sector", filters.sector);
-    if (filters?.status && filters.status !== "all") queryParams.append("status", filters.status);
-    
-    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
-    return fetchAPI<Attendance[]>(`/atendimentos${query}`);
-  },
-  
-  getById: (id: string) => fetchAPI<Attendance>(`/atendimentos/${id}`),
-  
-  create: (data: {
-    usuario_id: string;
-    setor: string;
-    motivo: string;
-  }) => fetchAPI<Attendance>("/atendimentos", {
-    method: "POST",
-    body: JSON.stringify(data),
-  }),
-  
-  markAsAttended: (id: string) => 
-    fetchAPI<Attendance>(`/atendimentos/${id}/attend`, {
-      method: "PATCH",
-    }),
 };
 
-// User API functions
-export const userAPI = {
-  getAll: () => fetchAPI<User[]>("/usuarios"),
-  
-  getById: (id: string) => fetchAPI<User>(`/usuarios/${id}`),
-  
-  create: (data: {
-    matricula: string;
-    nome: string;
-    cargo: string;
-    setor: string;
-    senha: string;
-  }) => fetchAPI<User>("/usuarios", {
-    method: "POST",
-    body: JSON.stringify(data),
-  }),
-  
-  login: (matricula: string, senha: string) => 
-    fetchAPI<User>("/usuarios/login", {
-      method: "POST",
-      body: JSON.stringify({ matricula, senha }),
-    }),
+// Buscar atendimento por ID
+export const getAttendanceById = async (id: string): Promise<Attendance | null> => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool
+      .request()
+      .input("Id", sql.Int, parseInt(id))
+      .query("SELECT * FROM atendimentos WHERE id = @Id");
+
+    return result.recordset[0] || null;
+  } catch (error) {
+    console.error("Erro ao buscar atendimento por ID:", error);
+    return null;
+  }
+};
+
+// Criar novo atendimento
+export const createAttendance = async (data: {
+  usuario_id: string;
+  setor: string;
+  motivo: string;
+}): Promise<Attendance | null> => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool
+      .request()
+      .input("UsuarioId", sql.Int, parseInt(data.usuario_id))
+      .input("Setor", sql.VarChar, data.setor)
+      .input("Motivo", sql.VarChar, data.motivo)
+      .query(`
+        INSERT INTO atendimentos (usuario_id, setor, motivo, atendido, data_hora)
+        OUTPUT INSERTED.*
+        VALUES (@UsuarioId, @Setor, @Motivo, 0, GETDATE())
+      `);
+
+    return result.recordset[0] || null;
+  } catch (error) {
+    console.error("Erro ao criar atendimento:", error);
+    return null;
+  }
+};
+
+// Marcar atendimento como atendido
+export const markAttendanceAsAttended = async (id: string): Promise<Attendance | null> => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool
+      .request()
+      .input("Id", sql.Int, parseInt(id))
+      .query(`
+        UPDATE atendimentos
+        SET atendido = 1
+        OUTPUT INSERTED.*
+        WHERE id = @Id
+      `);
+
+    return result.recordset[0] || null;
+  } catch (error) {
+    console.error("Erro ao marcar atendimento como atendido:", error);
+    return null;
+  }
 };

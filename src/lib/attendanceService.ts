@@ -1,12 +1,37 @@
-
 import { Attendance, DashboardStats } from "./types";
-import { attendanceService as supabaseAttendanceService } from "./supabaseService";
+import sql from 'mssql';
+
+// Configuração da conexão com o SQL Server
+const dbConfig = {
+  user: 'SRVUSER01',
+  password: 'Felipe51917610@',
+  server: 'SRVSQL',
+  database: 'BASE_ATENDE',
+  options: {
+    encrypt: true, // Para Azure
+    trustServerCertificate: true // Para desenvolvimento local
+  }
+};
 
 // Função auxiliar para converter formato de data
-const formatDateForQuery = (dateString?: string) => {
+const formatDateForQuery = (dateString?: string): Date | undefined => {
   if (!dateString) return undefined;
-  return new Date(dateString).toISOString();
+  return new Date(dateString);
 };
+
+// Mapear resultado do SQL para o modelo Attendance
+const mapToAttendanceModel = (record: any): Attendance => ({
+  id: record.id.toString(),
+  registration: record.registration,
+  name: record.name,
+  position: record.position,
+  sector: record.sector,
+  reason: record.reason,
+  createdAt: new Date(record.created_at),
+  attended: record.attended,
+  attendedAt: record.attended_at ? new Date(record.attended_at) : undefined,
+  hideAfter: record.hide_after
+});
 
 // Obter todos os registros de atendimento
 export const getAttendanceRecords = async (filters?: {
@@ -18,44 +43,76 @@ export const getAttendanceRecords = async (filters?: {
   registration?: string;
 }): Promise<Attendance[]> => {
   try {
-    const supabaseFilters = {
-      startDate: filters?.startDate ? formatDateForQuery(filters.startDate) : undefined,
-      endDate: filters?.endDate ? formatDateForQuery(filters.endDate) : undefined,
-      sector: filters?.sector,
-    };
-
-    const records = await supabaseAttendanceService.getAllAttendances(supabaseFilters);
+    const pool = await sql.connect(dbConfig);
     
-    // Mapeando para o formato do aplicativo e aplicando filtros adicionais
-    let mapped = records.map(supabaseAttendanceService.mapToAttendanceModel);
+    let query = `
+      SELECT 
+        a.id,
+        a.registration,
+        a.name,
+        a.position,
+        s.name AS sector,
+        a.reason,
+        a.created_at,
+        a.attended,
+        a.attended_at,
+        a.hide_after
+      FROM 
+        Attendances a
+      JOIN 
+        Sectors s ON a.sector_id = s.id
+      WHERE 1=1
+    `;
     
-    // Filtro por nome (aplicado após buscar do Supabase)
-    if (filters?.name) {
-      const searchName = filters.name.toLowerCase();
-      mapped = mapped.filter(record => record.name.toLowerCase().includes(searchName));
+    const params: { name: string, type: any, value: any }[] = [];
+    
+    if (filters?.startDate) {
+      query += ' AND a.created_at >= @startDate';
+      params.push({ name: 'startDate', type: sql.DateTime, value: formatDateForQuery(filters.startDate) });
     }
     
-    // Filtro por matrícula (aplicado após buscar do Supabase)
-    if (filters?.registration) {
-      const searchReg = filters.registration.toLowerCase();
-      mapped = mapped.filter(record => record.registration.toLowerCase().includes(searchReg));
+    if (filters?.endDate) {
+      query += ' AND a.created_at <= @endDate';
+      params.push({ name: 'endDate', type: sql.DateTime, value: formatDateForQuery(filters.endDate) });
     }
     
-    // Filtro por status (aplicado após buscar do Supabase)
+    if (filters?.sector) {
+      query += ' AND s.name = @sector';
+      params.push({ name: 'sector', type: sql.NVarChar, value: filters.sector });
+    }
+    
     if (filters?.status === 'waiting') {
-      mapped = mapped.filter(record => !record.attended);
+      query += ' AND a.attended = 0';
     } else if (filters?.status === 'attended') {
-      mapped = mapped.filter(record => record.attended);
+      query += ' AND a.attended = 1';
     }
     
-    return mapped;
+    if (filters?.name) {
+      query += ' AND a.name LIKE @name';
+      params.push({ name: 'name', type: sql.NVarChar, value: `%${filters.name}%` });
+    }
+    
+    if (filters?.registration) {
+      query += ' AND a.registration LIKE @registration';
+      params.push({ name: 'registration', type: sql.VarChar, value: `%${filters.registration}%` });
+    }
+    
+    query += ' ORDER BY a.created_at DESC';
+    
+    const request = pool.request();
+    params.forEach(param => request.input(param.name, param.type, param.value));
+    
+    const result = await request.query(query);
+    await pool.close();
+    
+    return result.recordset.map(mapToAttendanceModel);
   } catch (error) {
     console.error("Erro ao buscar registros de atendimento:", error);
     return [];
   }
 };
 
-// Registros visíveis na tela principal (filtrar apenas não atendidos ou recentes)
+// Registros visíveis na tela principal
 export const getVisibleAttendanceRecords = async (filters?: {
   startDate?: string;
   endDate?: string;
@@ -66,11 +123,9 @@ export const getVisibleAttendanceRecords = async (filters?: {
 }): Promise<Attendance[]> => {
   const records = await getAttendanceRecords(filters);
   
-  // Filtrar apenas registros não atendidos ou registros atendidos recentemente
   return records.filter(record => {
     if (!record.attended) return true;
     
-    // Mostra registros atendidos apenas por um período limitado
     if (record.hideAfter) {
       const hideTime = new Date(record.attendedAt || record.createdAt);
       hideTime.setSeconds(hideTime.getSeconds() + record.hideAfter);
@@ -84,9 +139,20 @@ export const getVisibleAttendanceRecords = async (filters?: {
 // Obter estatísticas para o dashboard
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
-    const allRecords = await getAttendanceRecords();
-    const waiting = allRecords.filter(record => !record.attended).length;
-    const attended = allRecords.filter(record => record.attended).length;
+    const pool = await sql.connect(dbConfig);
+    
+    const query = `
+      SELECT 
+        SUM(CASE WHEN attended = 0 THEN 1 ELSE 0 END) AS waiting,
+        SUM(CASE WHEN attended = 1 THEN 1 ELSE 0 END) AS attended
+      FROM Attendances
+    `;
+    
+    const result = await pool.request().query(query);
+    await pool.close();
+    
+    const waiting = result.recordset[0].waiting;
+    const attended = result.recordset[0].attended;
     
     return {
       waiting,
@@ -112,56 +178,62 @@ export const createAttendanceRecord = async (data: {
   reason: string;
 }): Promise<Attendance> => {
   try {
-    // Buscar o ID do setor pelo nome
-    const { sectorService } = await import("./supabaseService");
-    const sector = await sectorService.getSectorByName(data.sector);
+    const pool = await sql.connect(dbConfig);
     
-    if (!sector) {
+    // Obter ID do setor
+    const sectorResult = await pool.request()
+      .input('sector', sql.NVarChar, data.sector)
+      .query('SELECT id FROM Sectors WHERE name = @sector');
+    
+    if (sectorResult.recordset.length === 0) {
       throw new Error(`Setor não encontrado: ${data.sector}`);
     }
     
-    // Criar o registro no Supabase
-    const attendance = await supabaseAttendanceService.createAttendance({
-      matricula: data.registration,
-      nome: data.name,
-      cargo: data.position,
-      setor_id: sector.id,
-      motivo: data.reason
-    });
+    const sectorId = sectorResult.recordset[0].id;
     
-    if (!attendance) {
+    // Inserir novo atendimento
+    const insertResult = await pool.request()
+      .input('registration', sql.VarChar, data.registration)
+      .input('name', sql.NVarChar, data.name)
+      .input('position', sql.NVarChar, data.position)
+      .input('sector_id', sql.Int, sectorId)
+      .input('reason', sql.NVarChar, data.reason)
+      .query(`
+        INSERT INTO Attendances (registration, name, position, sector_id, reason)
+        OUTPUT INSERTED.*
+        VALUES (@registration, @name, @position, @sector_id, @reason)
+      `);
+    
+    await pool.close();
+    
+    if (insertResult.recordset.length === 0) {
       throw new Error("Erro ao criar atendimento");
     }
     
-    // Retornar o atendimento no formato da aplicação
-    return supabaseAttendanceService.mapToAttendanceModel(attendance);
+    return mapToAttendanceModel(insertResult.recordset[0]);
   } catch (error) {
     console.error("Erro ao criar registro de atendimento:", error);
     throw error;
   }
 };
 
-// Atualizar registro de atendimento
-export const updateAttendanceRecord = async (
-  id: string,
-  data: Partial<Attendance>
-): Promise<boolean> => {
-  try {
-    // Implementação para atualizar os dados no Supabase
-    // Esta é uma função que precisará ser implementada no futuro
-    console.log(`Atualização do atendimento ${id} com dados:`, data);
-    return true;
-  } catch (error) {
-    console.error(`Erro ao atualizar atendimento ${id}:`, error);
-    return false;
-  }
-};
-
 // Marcar como atendido
 export const markAsAttended = async (id: string): Promise<boolean> => {
   try {
-    // Implementação para marcar como atendido no Supabase
-    return await supabaseAttendanceService.markAsAttended(Number(id));
+    const pool = await sql.connect(dbConfig);
+    
+    const result = await pool.request()
+      .input('id', sql.Int, parseInt(id))
+      .input('attended_at', sql.DateTime, new Date())
+      .query(`
+        UPDATE Attendances 
+        SET attended = 1, attended_at = @attended_at 
+        WHERE id = @id
+      `);
+    
+    await pool.close();
+    
+    return result.rowsAffected[0] > 0;
   } catch (error) {
     console.error(`Erro ao marcar atendimento ${id} como atendido:`, error);
     return false;
@@ -171,25 +243,66 @@ export const markAsAttended = async (id: string): Promise<boolean> => {
 // Excluir registro de atendimento
 export const deleteAttendanceRecord = async (id: string): Promise<boolean> => {
   try {
-    // Implementação para excluir o registro no Supabase
-    return await supabaseAttendanceService.deleteAttendance(Number(id));
+    const pool = await sql.connect(dbConfig);
+    
+    const result = await pool.request()
+      .input('id', sql.Int, parseInt(id))
+      .query('DELETE FROM Attendances WHERE id = @id');
+    
+    await pool.close();
+    
+    return result.rowsAffected[0] > 0;
   } catch (error) {
     console.error(`Erro ao excluir atendimento ${id}:`, error);
     return false;
   }
 };
 
+// Encontrar um registro específico
 export const findAttendanceRecord = async (id: string): Promise<Attendance | undefined> => {
   try {
-    const records = await getAttendanceRecords();
-    return records.find(record => record.id === id);
+    const pool = await sql.connect(dbConfig);
+    
+    const result = await pool.request()
+      .input('id', sql.Int, parseInt(id))
+      .query(`
+        SELECT 
+          a.id,
+          a.registration,
+          a.name,
+          a.position,
+          s.name AS sector,
+          a.reason,
+          a.created_at,
+          a.attended,
+          a.attended_at,
+          a.hide_after
+        FROM 
+          Attendances a
+        JOIN 
+          Sectors s ON a.sector_id = s.id
+        WHERE 
+          a.id = @id
+      `);
+    
+    await pool.close();
+    
+    if (result.recordset.length === 0) {
+      return undefined;
+    }
+    
+    return mapToAttendanceModel(result.recordset[0]);
   } catch (error) {
     console.error(`Error finding attendance record ${id}:`, error);
     return undefined;
   }
 };
 
+// Obter números de WhatsApp do setor
 export const getSectorWhatsAppNumber = (sector: "RH" | "DISCIPLINA" | "DP" | "PLANEJAMENTO") => {
+  // Implementação alternativa para SQL Server
+  // Pode ser armazenado em uma tabela ou em um campo JSON na tabela Sectors
+  // Aqui estou mantendo similar ao original com localStorage
   const sectorPhoneNumbers = JSON.parse(localStorage.getItem("sectorPhoneNumbers") || "[]");
   const sectorNumbers = sectorPhoneNumbers.find((s: { sector: string; phoneNumbers: any[]; }) => s.sector === sector);
   return sectorNumbers ? sectorNumbers.phoneNumbers : [];

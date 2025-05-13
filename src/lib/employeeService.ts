@@ -1,5 +1,5 @@
-
-import { employeeService as supabaseEmployeeService } from "./supabaseService";
+import sql from 'mssql';
+import { dbConfig } from './dbConfig'; // Importe a configuração compartilhada
 
 type Employee = {
   registration: string;
@@ -19,14 +19,29 @@ const EMPLOYEES_CACHE: Employee[] = [
 
 export const findEmployeeByRegistration = async (registration: string): Promise<Employee | null> => {
   try {
-    // Tenta buscar do Supabase
-    const employee = await supabaseEmployeeService.getEmployeeByRegistration(registration);
+    const pool = await sql.connect(dbConfig);
     
-    if (employee) {
+    const result = await pool.request()
+      .input('registration', sql.VarChar, registration)
+      .query(`
+        SELECT 
+          registration, 
+          name, 
+          position 
+        FROM 
+          Employees 
+        WHERE 
+          registration = @registration
+      `);
+    
+    await pool.close();
+    
+    if (result.recordset.length > 0) {
+      const employee = result.recordset[0];
       return {
-        registration: employee.matricula,
-        name: employee.nome,
-        position: employee.cargo
+        registration: employee.registration,
+        name: employee.name,
+        position: employee.position
       };
     }
     
@@ -44,13 +59,26 @@ export const findEmployeeByRegistration = async (registration: string): Promise<
 
 export const getAllEmployees = async (): Promise<Employee[]> => {
   try {
-    // Tenta buscar do Supabase
-    const employees = await supabaseEmployeeService.getAllEmployees();
+    const pool = await sql.connect(dbConfig);
     
-    return employees.map(emp => ({
-      registration: emp.matricula,
-      name: emp.nome,
-      position: emp.cargo
+    const result = await pool.request()
+      .query(`
+        SELECT 
+          registration, 
+          name, 
+          position 
+        FROM 
+          Employees
+        ORDER BY 
+          name
+      `);
+    
+    await pool.close();
+    
+    return result.recordset.map(emp => ({
+      registration: emp.registration,
+      name: emp.name,
+      position: emp.position
     }));
   } catch (error) {
     console.error("Erro ao buscar funcionários:", error);
@@ -60,8 +88,64 @@ export const getAllEmployees = async (): Promise<Employee[]> => {
   }
 };
 
-// In a production environment, this would be a function to import employee data from Excel
-export const importEmployeesFromExcel = (excelData: any) => {
-  // Implementation would parse Excel data and update EMPLOYEES_DATA
-  console.log("Excel import functionality would be implemented here");
+// Função para importar funcionários do Excel (versão SQL Server)
+export const importEmployeesFromExcel = async (excelData: any[]): Promise<boolean> => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const transaction = new sql.Transaction(pool);
+    
+    try {
+      await transaction.begin();
+      const request = new sql.Request(transaction);
+      
+      // Limpar tabela antes de importar (opcional)
+      await request.query('DELETE FROM Employees');
+      
+      // Inserir cada funcionário
+      for (const employee of excelData) {
+        await request
+          .input('registration', sql.VarChar, employee.registration)
+          .input('name', sql.NVarChar, employee.name)
+          .input('position', sql.NVarChar, employee.position)
+          .query(`
+            INSERT INTO Employees (registration, name, position)
+            VALUES (@registration, @name, @position)
+          `);
+      }
+      
+      await transaction.commit();
+      return true;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    } finally {
+      await pool.close();
+    }
+  } catch (error) {
+    console.error("Erro ao importar funcionários:", error);
+    return false;
+  }
+};
+
+// Criar tabela de funcionários (executar uma vez)
+export const createEmployeesTable = async () => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    
+    await pool.request().query(`
+      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Employees' AND xtype='U')
+      CREATE TABLE Employees (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        registration VARCHAR(50) NOT NULL UNIQUE,
+        name NVARCHAR(100) NOT NULL,
+        position NVARCHAR(100),
+        created_at DATETIME2 DEFAULT GETDATE()
+      )
+    `);
+    
+    await pool.close();
+    console.log('Tabela Employees verificada/criada com sucesso');
+  } catch (error) {
+    console.error('Erro ao criar tabela Employees:', error);
+  }
 };

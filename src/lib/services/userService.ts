@@ -1,100 +1,13 @@
-
-import { supabase } from "@/integrations/supabase/client";
-import { User, Permission, UserRole } from "@/lib/types";
-import { DbUser, DbPermission, mapDbUserToAppUser } from "./dbMapperService";
-
-// Criar novo usuário
-export const createUserInSupabase = async (
-  username: string, 
-  password: string, 
-  role: UserRole, 
-  permissions: Permission
-): Promise<User | null> => {
-  try {
-    // Verificar se o usuário já existe
-    const { data: existingUser } = await supabase
-      .from('usuarios')
-      .select('id')
-      .eq('username', username)
-      .single();
-    
-    if (existingUser) {
-      console.error("Usuário já existe");
-      return null;
-    }
-    
-    // Inserir novo usuário
-    const { data: newUser, error: userError } = await supabase
-      .from('usuarios')
-      .insert([{ username, password, role }])
-      .select()
-      .single();
-    
-    if (userError || !newUser) {
-      console.error("Erro ao criar usuário:", userError);
-      return null;
-    }
-    
-    // Inserir permissões do usuário
-    const { error: permError } = await supabase
-      .from('permissoes')
-      .insert([{ 
-        usuario_id: newUser.id, 
-        view: permissions.view, 
-        edit: permissions.edit, 
-        delete: permissions.delete, 
-        can_create: permissions.create 
-      }]);
-    
-    if (permError) {
-      console.error("Erro ao criar permissões:", permError);
-      // Excluir o usuário criado para manter a consistência
-      await supabase.from('usuarios').delete().eq('id', newUser.id);
-      return null;
-    }
-    
-    // Retornar o usuário criado com suas permissões
-    return {
-      id: newUser.id.toString(),
-      username: newUser.username,
-      role: newUser.role as UserRole,
-      permissions
-    };
-  } catch (error) {
-    console.error("Erro no serviço de criação de usuário:", error);
-    return null;
-  }
-};
+import sql from "mssql";
+import { User } from "./types";
+import { dbConfig } from "@/config/dbConfig";
 
 // Buscar todos os usuários
 export const getAllUsers = async (): Promise<User[]> => {
   try {
-    // Buscar todos os usuários
-    const { data: users, error: usersError } = await supabase
-      .from('usuarios')
-      .select('*')
-      .order('username');
-    
-    if (usersError || !users) {
-      console.error("Erro ao buscar usuários:", usersError);
-      return [];
-    }
-    
-    // Buscar todas as permissões
-    const { data: permissions, error: permsError } = await supabase
-      .from('permissoes')
-      .select('*');
-    
-    if (permsError || !permissions) {
-      console.error("Erro ao buscar permissões:", permsError);
-      return [];
-    }
-    
-    // Mapear usuários e suas permissões
-    return users.map((user: DbUser) => {
-      const userPerms = permissions.find((p: DbPermission) => p.usuario_id === user.id);
-      return mapDbUserToAppUser(user, userPerms || null);
-    });
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query("SELECT * FROM usuarios");
+    return result.recordset;
   } catch (error) {
     console.error("Erro ao buscar usuários:", error);
     return [];
@@ -104,40 +17,62 @@ export const getAllUsers = async (): Promise<User[]> => {
 // Buscar usuário por ID
 export const getUserById = async (id: string): Promise<User | null> => {
   try {
-    // Converter o ID de string para número
-    const numericId = parseInt(id, 10);
-    
-    // Verificar se a conversão foi bem-sucedida
-    if (isNaN(numericId)) {
-      console.error(`ID inválido: ${id} não é um número válido`);
-      return null;
-    }
-    
-    const { data: user, error: userError } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('id', numericId)
-      .single();
-    
-    if (userError || !user) {
-      console.error(`Erro ao buscar usuário ${id}:`, userError);
-      return null;
-    }
-    
-    const { data: permissions, error: permError } = await supabase
-      .from('permissoes')
-      .select('*')
-      .eq('usuario_id', user.id)
-      .single();
-    
-    if (permError) {
-      console.error(`Erro ao buscar permissões do usuário ${id}:`, permError);
-      return null;
-    }
-    
-    return mapDbUserToAppUser(user as DbUser, permissions as DbPermission);
+    const pool = await sql.connect(dbConfig);
+    const result = await pool
+      .request()
+      .input("Id", sql.Int, parseInt(id))
+      .query("SELECT * FROM usuarios WHERE id = @Id");
+
+    return result.recordset[0] || null;
   } catch (error) {
-    console.error(`Erro ao buscar usuário ${id}:`, error);
+    console.error("Erro ao buscar usuário:", error);
+    return null;
+  }
+};
+
+// Criar novo usuário
+export const createUser = async (data: {
+  matricula: string;
+  nome: string;
+  cargo: string;
+  setor: string;
+  senha: string;
+}): Promise<User | null> => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool
+      .request()
+      .input("Matricula", sql.VarChar, data.matricula)
+      .input("Nome", sql.VarChar, data.nome)
+      .input("Cargo", sql.VarChar, data.cargo)
+      .input("Setor", sql.VarChar, data.setor)
+      .input("Senha", sql.VarChar, data.senha)
+      .query(`
+        INSERT INTO usuarios (matricula, nome, cargo, setor, senha)
+        OUTPUT INSERTED.*
+        VALUES (@Matricula, @Nome, @Cargo, @Setor, @Senha)
+      `);
+
+    return result.recordset[0] || null;
+  } catch (error) {
+    console.error("Erro ao criar usuário:", error);
+    return null;
+  }
+};
+
+// Login
+export const loginUser = async (matricula: string, senha: string): Promise<User | null> => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool
+      .request()
+      .input("Matricula", sql.VarChar, matricula)
+      .input("Senha", sql.VarChar, senha)
+      .query("SELECT * FROM usuarios WHERE matricula = @Matricula AND senha = @Senha");
+
+    return result.recordset[0] || null;
+  } catch (error) {
+    console.error("Erro ao fazer login:", error);
     return null;
   }
 };

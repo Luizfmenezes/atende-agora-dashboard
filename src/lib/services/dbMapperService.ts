@@ -1,42 +1,48 @@
+import sql from "mssql";
+import { mapDbUserToAppUser, DbUser, DbPermission } from "./dbMapperService";
+import { User } from "@/lib/types";
+import { dbConfig } from "@/config/dbConfig"; // você precisa definir essa configuração
 
-import { User, Permission, UserRole } from "@/lib/types";
+export const authenticateWithSqlServer = async (
+  username: string,
+  password: string
+): Promise<User | null> => {
+  try {
+    const pool = await sql.connect(dbConfig);
 
-// Interfaces para representar os dados do banco
-export interface DbUser {
-  id: number;
-  username: string;
-  password: string;
-  role: string;
-  created_at: string;
-}
+    const result = await pool
+      .request()
+      .input("Username", sql.VarChar, username)
+      .input("Password", sql.VarChar, password)
+      .execute("usp_AutenticarUsuario");
 
-export interface DbPermission {
-  usuario_id: number;
-  view: boolean;
-  edit: boolean;
-  delete: boolean;
-  can_create: boolean;
-}
+    const userData = result.recordset[0];
 
-// Função auxiliar para converter dados do DB para o formato da aplicação
-export const mapDbUserToAppUser = (
-  user: DbUser, 
-  permissions: DbPermission | null
-): User => {
-  return {
-    id: user.id.toString(),
-    username: user.username,
-    role: user.role as UserRole,
-    permissions: permissions ? {
-      view: permissions.view,
-      edit: permissions.edit,
-      delete: permissions.delete,
-      create: permissions.can_create
-    } : {
-      view: true,
-      edit: false,
-      delete: false,
-      create: false
+    if (!userData) {
+      console.error("Usuário não encontrado ou senha incorreta.");
+      return null;
     }
-  };
+
+    // Construir objetos de acordo com os tipos
+    const dbUser: DbUser = {
+      id: userData.user_id,
+      username: userData.username,
+      password: '', // Não retornamos a senha
+      role: userData.role,
+      created_at: '' // Opcional, não vem da SP
+    };
+
+    const dbPermission: DbPermission = {
+      usuario_id: userData.user_id,
+      view: userData.view,
+      edit: userData.edit,
+      delete: userData.delete,
+      can_create: userData.can_create
+    };
+
+    return mapDbUserToAppUser(dbUser, dbPermission);
+  } catch (error) {
+    console.error("Erro na autenticação com SQL Server:", error);
+    return null;
+  }
 };
