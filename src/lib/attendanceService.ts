@@ -19,12 +19,6 @@ const formatDateForQuery = (dateString?: string): Date | undefined => {
   return new Date(dateString);
 };
 
-// src/lib/attendanceService.ts
-export const getAttendanceRecords = async () => {
-  const response = await fetch('/api/attendances');
-  return await response.json();
-};
-
 // Mapear resultado do SQL para o modelo Attendance
 const mapToAttendanceModel = (record: any): Attendance => ({
   id: record.id.toString(),
