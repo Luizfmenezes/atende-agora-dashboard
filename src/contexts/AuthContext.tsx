@@ -1,8 +1,7 @@
+// Versão SIMPLIFICADA de src/contexts/AuthContext.tsx para TESTE
 
-import React, { createContext, useState, useContext, useEffect, ReactNode } from "react";
-import { User } from "@/lib/types";
-import { authenticate } from "@/lib/auth";
-import { useToast } from "@/components/ui/use-toast";
+import React, { createContext, useState, useContext, ReactNode } from "react";
+import { User } from "@/lib/types"; // Vamos assumir que o tipo User é simples
 
 interface AuthContextType {
   user: User | null;
@@ -15,60 +14,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const { toast } = useToast();
 
-  // Verificar se o usuário está salvo no localStorage ao iniciar
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error("Error parsing stored user", e);
-        localStorage.removeItem("user");
-      }
-    }
-  }, []);
-
+  // Lógica de login simplificada (não chama API externa)
   const login = async (username: string, password: string): Promise<boolean> => {
-    try {
-      const authenticatedUser = await authenticate(username, password);
-      
-      if (authenticatedUser) {
-        setUser(authenticatedUser);
-        localStorage.setItem("user", JSON.stringify(authenticatedUser));
-        toast({
-          title: "Login bem sucedido",
-          description: `Bem-vindo, ${authenticatedUser.username}!`,
-        });
-        return true;
-      } else {
-        toast({
-          title: "Falha no login",
-          description: "Usuário ou senha incorretos",
-          variant: "destructive",
-        });
-        return false;
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        title: "Erro no login",
-        description: "Ocorreu um erro ao fazer login",
-        variant: "destructive",
-      });
-      return false;
-    }
+    console.log("Login SIMULADO chamado com:", username, password);
+    // Simular um utilizador para teste - ajuste a estrutura de 'User' conforme necessário
+    const mockUser: User = { id: "1", username: username, role: "user", permissions: { view: true, edit: false, delete: false, create: false } }; 
+    setUser(mockUser);
+    console.log("Utilizador simulado definido:", mockUser);
+    return true;
   };
 
+  // Lógica de logout simplificada
   const logout = () => {
+    console.log("Logout SIMULADO chamado");
     setUser(null);
-    localStorage.removeItem("user");
-    toast({
-      title: "Logout realizado",
-      description: "Você saiu da sua conta",
-    });
   };
+
+  console.log("AuthProvider SIMPLIFICADO está a renderizar. Utilizador atual:", user);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
