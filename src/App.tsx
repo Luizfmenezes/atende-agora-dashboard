@@ -2,22 +2,23 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-// import { AuthProvider, useAuth } from "@/contexts/AuthContext"; // Comentado
+import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext"; // Descomentado e a importar a versão simplificada
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    {/* <AuthProvider> */}{/* Comentado */}
+    <AuthProvider> {/* AuthProvider está ATIVO */}
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div>Página de Teste Inicial com Router SEM AUTH</div>
+          {/* O texto aqui pode ser o que quiser para teste, por exemplo: */}
+          <div>Página de Teste com AuthProvider SIMPLIFICADO ATIVO</div>
         </BrowserRouter>
       </TooltipProvider>
-    {/* </AuthProvider> */}{/* Comentado */}
+    </AuthProvider>
   </QueryClientProvider>
 );
 
