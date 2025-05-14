@@ -1,8 +1,9 @@
-// src/contexts/AuthContext.tsx - Testando com useEffect e useToast
+// src/contexts/AuthContext.tsx - Testando com lógica de login completa
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { User } from "@/lib/types";
-import { useToast } from "@/components/ui/use-toast"; // REINTRODUZIDO
+import { useToast } from "@/components/ui/use-toast";
+import { authenticate } from "@/lib/auth"; // REINTRODUZIDO - Certifique-se que este caminho está correto
 
 interface AuthContextType {
   user: User | null;
@@ -15,7 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const { toast } = useToast(); // REINTRODUZIDO
+  const { toast } = useToast();
 
   useEffect(() => {
     console.log("AuthContext: useEffect para localStorage está a ser executado.");
@@ -32,29 +33,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // LÓGICA DE LOGIN COMPLETA REINTRODUZIDA
   const login = async (username: string, password: string): Promise<boolean> => {
-    console.log("Login SIMULADO chamado com:", username, password);
-    const mockUser: User = { id: "1", username: username, role: "user", permissions: { view: true, edit: false, delete: false, create: false } }; 
-    setUser(mockUser);
-    // localStorage.setItem("user", JSON.stringify(mockUser)); // Ainda não vamos guardar no login simulado
-    toast({ // REINTRODUZIDO (exemplo)
-      title: "Login Simulado OK",
-      description: `Bem-vindo (simulado), ${username}!`, 
-    });
-    console.log("Utilizador simulado definido:", mockUser);
-    return true;
+    console.log("AuthContext: Tentativa de login com:", username);
+    try {
+      const authenticatedUser = await authenticate(username, password); // Chamada à sua função real
+      
+      if (authenticatedUser) {
+        setUser(authenticatedUser);
+        localStorage.setItem("user", JSON.stringify(authenticatedUser)); // Guardar no localStorage
+        toast({
+          title: "Login bem sucedido",
+          description: `Bem-vindo, ${authenticatedUser.username}!`, 
+        });
+        console.log("AuthContext: Login bem sucedido, utilizador:", authenticatedUser);
+        return true;
+      } else {
+        toast({
+          title: "Falha no login",
+          description: "Usuário ou senha incorretos",
+          variant: "destructive",
+        });
+        console.warn("AuthContext: Falha no login - utilizador ou senha incorretos.");
+        return false;
+      }
+    } catch (error) {
+      console.error("AuthContext: Erro durante o login:", error);
+      toast({
+        title: "Erro no login",
+        description: "Ocorreu um erro ao fazer login. Verifique a consola.",
+        variant: "destructive",
+      });
+      return false;
+    }
   };
 
   const logout = () => {
-    console.log("Logout SIMULADO chamado");
+    console.log("AuthContext: Logout chamado");
     setUser(null);
     localStorage.removeItem("user");
-    toast({ // REINTRODUZIDO (exemplo)
-      title: "Logout Simulado OK",
+    toast({
+      title: "Logout realizado",
+      description: "Você saiu da sua conta",
     });
   };
 
-  console.log("AuthProvider com useEffect e useToast está a renderizar. Utilizador atual:", user);
+  console.log("AuthProvider com lógica de login completa está a renderizar. Utilizador atual:", user);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
