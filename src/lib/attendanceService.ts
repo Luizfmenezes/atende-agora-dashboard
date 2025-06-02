@@ -22,7 +22,8 @@ export const getAttendanceRecords = async (filters?: {
       startDate: filters?.startDate ? formatDateForQuery(filters.startDate) : undefined,
       endDate: filters?.endDate ? formatDateForQuery(filters.endDate) : undefined,
       sector: filters?.sector,
-      status: filters?.status === 'waiting' ? 'waiting' : filters?.status === 'attended' ? 'attended' : undefined,
+      status: filters?.status === 'waiting' ? 'waiting' as const : 
+              filters?.status === 'attended' ? 'attended' as const : undefined,
     };
 
     let records = await sqlServerAttendanceService.getAllAttendances(sqlServerFilters);

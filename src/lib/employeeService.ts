@@ -1,6 +1,4 @@
 
-import { employeeService as supabaseEmployeeService } from "./supabaseService";
-
 type Employee = {
   registration: string;
   name: string;
@@ -19,18 +17,7 @@ const EMPLOYEES_CACHE: Employee[] = [
 
 export const findEmployeeByRegistration = async (registration: string): Promise<Employee | null> => {
   try {
-    // Tenta buscar do Supabase
-    const employee = await supabaseEmployeeService.getEmployeeByRegistration(registration);
-    
-    if (employee) {
-      return {
-        registration: employee.matricula,
-        name: employee.nome,
-        position: employee.cargo
-      };
-    }
-    
-    // Fallback para buscar do cache local
+    // For now, we'll use the local cache until employee service is implemented
     const cachedEmployee = EMPLOYEES_CACHE.find(emp => emp.registration === registration);
     return cachedEmployee || null;
   } catch (error) {
@@ -44,14 +31,8 @@ export const findEmployeeByRegistration = async (registration: string): Promise<
 
 export const getAllEmployees = async (): Promise<Employee[]> => {
   try {
-    // Tenta buscar do Supabase
-    const employees = await supabaseEmployeeService.getAllEmployees();
-    
-    return employees.map(emp => ({
-      registration: emp.matricula,
-      name: emp.nome,
-      position: emp.cargo
-    }));
+    // For now, return the local cache until employee service is implemented
+    return [...EMPLOYEES_CACHE];
   } catch (error) {
     console.error("Erro ao buscar funcionários:", error);
     

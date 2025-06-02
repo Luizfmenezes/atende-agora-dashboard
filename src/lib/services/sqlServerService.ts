@@ -107,7 +107,7 @@ export const attendanceService = {
       if (filters?.startDate) queryParams.append("startDate", filters.startDate);
       if (filters?.endDate) queryParams.append("endDate", filters.endDate);
       if (filters?.sector && filters.sector !== "all") queryParams.append("sector", filters.sector);
-      if (filters?.status && filters.status !== "all") queryParams.append("status", filters.status);
+      if (filters?.status) queryParams.append("status", filters.status);
       
       const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
       const response = await fetchAPI<any[]>(`/attendances${query}`);
