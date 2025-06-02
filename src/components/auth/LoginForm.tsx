@@ -26,7 +26,7 @@ export const LoginForm = () => {
       if (success) {
         navigate("/dashboard", { replace: true });
       } else {
-        setError("Usuário ou senha incorretos. Tente: adm / adm123");
+        setError("Usuário ou senha incorretos.");
       }
     } catch (err) {
       setError("Ocorreu um erro ao fazer login. Por favor, tente novamente.");
