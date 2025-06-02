@@ -29,16 +29,6 @@ const Login = () => {
         </div>
         
         <LoginForm />
-        
-        <div className="mt-6 text-center">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p className="text-sm text-yellow-800">
-              <strong>Login temporário:</strong><br />
-              Usuário: <code className="bg-yellow-100 px-1 rounded">adm</code><br />
-              Senha: <code className="bg-yellow-100 px-1 rounded">adm123</code>
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
