@@ -2,7 +2,6 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { User } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
-import { API_CONFIG } from "@/lib/config/database";
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +12,24 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Login temporário para desenvolvimento
+const TEMP_LOGIN = {
+  username: "adm",
+  password: "adm123"
+};
+
+const TEMP_USER: User = {
+  id: "temp-admin-001",
+  username: "adm",
+  role: "admin",
+  permissions: {
+    view: true,
+    edit: true,
+    delete: true,
+    create: true
+  }
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -45,6 +62,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       
+      // Verificar login temporário primeiro
+      if (username === TEMP_LOGIN.username && password === TEMP_LOGIN.password) {
+        setUser(TEMP_USER);
+        localStorage.setItem("user", JSON.stringify(TEMP_USER));
+        localStorage.setItem("auth_token", "temp-token-admin");
+        
+        toast({
+          title: "Login bem sucedido",
+          description: `Bem-vindo, ${TEMP_USER.username}! (Login temporário)`,
+        });
+        return true;
+      }
+
+      // Se não for o login temporário, tentar autenticação com API
+      // Comentado para evitar erros enquanto não há API funcionando
+      /*
       const response = await fetch(`${API_CONFIG.baseURL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -70,9 +103,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: `Bem-vindo, ${data.user.username}!`,
         });
         return true;
-      } else {
-        throw new Error('Dados de autenticação inválidos');
       }
+      */
+
+      // Se chegou aqui, as credenciais estão incorretas
+      toast({
+        title: "Erro no login",
+        description: "Usuário ou senha incorretos",
+        variant: "destructive",
+      });
+      return false;
     } catch (error) {
       console.error("Login error:", error);
       toast({
