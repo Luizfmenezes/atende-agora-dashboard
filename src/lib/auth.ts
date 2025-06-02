@@ -1,9 +1,9 @@
 
 import { User, Permission, UserRole } from "@/lib/types";
-import { authService, userService } from "@/lib/userService";
+import { authService, userService } from "@/lib/services/sqlServerService";
 
 export const authenticate = async (username: string, password: string): Promise<User | null> => {
-  return await authService.authenticateWithSupabase(username, password);
+  return await authService.authenticate(username, password);
 };
 
 export const createUser = async (
@@ -12,7 +12,7 @@ export const createUser = async (
   role: UserRole, 
   permissions: Permission
 ): Promise<User | null> => {
-  return await userService.createUserInSupabase(username, password, role, permissions);
+  return await userService.createUser(username, password, role, permissions);
 };
 
 export const validatePermission = (user: User | null, permission: keyof Permission): boolean => {

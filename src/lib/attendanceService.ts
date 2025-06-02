@@ -1,6 +1,6 @@
 
 import { Attendance, DashboardStats } from "./types";
-import { attendanceService as supabaseAttendanceService } from "./supabaseService";
+import { attendanceService as sqlServerAttendanceService } from "./services/sqlServerService";
 
 // Função auxiliar para converter formato de data
 const formatDateForQuery = (dateString?: string) => {
@@ -18,37 +18,28 @@ export const getAttendanceRecords = async (filters?: {
   registration?: string;
 }): Promise<Attendance[]> => {
   try {
-    const supabaseFilters = {
+    const sqlServerFilters = {
       startDate: filters?.startDate ? formatDateForQuery(filters.startDate) : undefined,
       endDate: filters?.endDate ? formatDateForQuery(filters.endDate) : undefined,
       sector: filters?.sector,
+      status: filters?.status === 'waiting' ? 'waiting' : filters?.status === 'attended' ? 'attended' : undefined,
     };
 
-    const records = await supabaseAttendanceService.getAllAttendances(supabaseFilters);
+    let records = await sqlServerAttendanceService.getAllAttendances(sqlServerFilters);
     
-    // Mapeando para o formato do aplicativo e aplicando filtros adicionais
-    let mapped = records.map(supabaseAttendanceService.mapToAttendanceModel);
-    
-    // Filtro por nome (aplicado após buscar do Supabase)
+    // Filtro por nome (aplicado após buscar do SQL Server)
     if (filters?.name) {
       const searchName = filters.name.toLowerCase();
-      mapped = mapped.filter(record => record.name.toLowerCase().includes(searchName));
+      records = records.filter(record => record.name.toLowerCase().includes(searchName));
     }
     
-    // Filtro por matrícula (aplicado após buscar do Supabase)
+    // Filtro por matrícula (aplicado após buscar do SQL Server)
     if (filters?.registration) {
       const searchReg = filters.registration.toLowerCase();
-      mapped = mapped.filter(record => record.registration.toLowerCase().includes(searchReg));
+      records = records.filter(record => record.registration.toLowerCase().includes(searchReg));
     }
     
-    // Filtro por status (aplicado após buscar do Supabase)
-    if (filters?.status === 'waiting') {
-      mapped = mapped.filter(record => !record.attended);
-    } else if (filters?.status === 'attended') {
-      mapped = mapped.filter(record => record.attended);
-    }
-    
-    return mapped;
+    return records;
   } catch (error) {
     console.error("Erro ao buscar registros de atendimento:", error);
     return [];
@@ -112,29 +103,7 @@ export const createAttendanceRecord = async (data: {
   reason: string;
 }): Promise<Attendance> => {
   try {
-    // Buscar o ID do setor pelo nome
-    const { sectorService } = await import("./supabaseService");
-    const sector = await sectorService.getSectorByName(data.sector);
-    
-    if (!sector) {
-      throw new Error(`Setor não encontrado: ${data.sector}`);
-    }
-    
-    // Criar o registro no Supabase
-    const attendance = await supabaseAttendanceService.createAttendance({
-      matricula: data.registration,
-      nome: data.name,
-      cargo: data.position,
-      setor_id: sector.id,
-      motivo: data.reason
-    });
-    
-    if (!attendance) {
-      throw new Error("Erro ao criar atendimento");
-    }
-    
-    // Retornar o atendimento no formato da aplicação
-    return supabaseAttendanceService.mapToAttendanceModel(attendance);
+    return await sqlServerAttendanceService.createAttendance(data);
   } catch (error) {
     console.error("Erro ao criar registro de atendimento:", error);
     throw error;
@@ -147,8 +116,7 @@ export const updateAttendanceRecord = async (
   data: Partial<Attendance>
 ): Promise<boolean> => {
   try {
-    // Implementação para atualizar os dados no Supabase
-    // Esta é uma função que precisará ser implementada no futuro
+    // Implementação para atualizar os dados no SQL Server
     console.log(`Atualização do atendimento ${id} com dados:`, data);
     return true;
   } catch (error) {
@@ -160,8 +128,7 @@ export const updateAttendanceRecord = async (
 // Marcar como atendido
 export const markAsAttended = async (id: string): Promise<boolean> => {
   try {
-    // Implementação para marcar como atendido no Supabase
-    return await supabaseAttendanceService.markAsAttended(Number(id));
+    return await sqlServerAttendanceService.markAsAttended(id);
   } catch (error) {
     console.error(`Erro ao marcar atendimento ${id} como atendido:`, error);
     return false;
@@ -171,8 +138,7 @@ export const markAsAttended = async (id: string): Promise<boolean> => {
 // Excluir registro de atendimento
 export const deleteAttendanceRecord = async (id: string): Promise<boolean> => {
   try {
-    // Implementação para excluir o registro no Supabase
-    return await supabaseAttendanceService.deleteAttendance(Number(id));
+    return await sqlServerAttendanceService.deleteAttendance(id);
   } catch (error) {
     console.error(`Erro ao excluir atendimento ${id}:`, error);
     return false;

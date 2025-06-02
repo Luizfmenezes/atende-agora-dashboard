@@ -1,19 +1,19 @@
 
-import { authenticateWithSupabase } from './services/authService';
-import { createUserInSupabase, getAllUsers, getUserById } from './services/userService';
+import { authService, userService as sqlServerUserService } from "@/lib/services/sqlServerService";
 
 // Serviço de autenticação
-export const authService = {
-  authenticateWithSupabase
+export const authService as exportedAuthService = {
+  authenticateWithSupabase: authService.authenticate
 };
 
 // Serviço de gerenciamento de usuários
 export const userService = {
-  createUserInSupabase,
-  getAllUsers,
-  getUserById
+  createUserInSupabase: sqlServerUserService.createUser,
+  getAllUsers: sqlServerUserService.getAllUsers,
+  getUserById: sqlServerUserService.getUserById
 };
 
 // Para compatibilidade com código existente
-export const getUsersFromSupabase = getAllUsers;
-export { authenticateWithSupabase, createUserInSupabase };
+export const getUsersFromSupabase = sqlServerUserService.getAllUsers;
+export const authenticateWithSupabase = authService.authenticate;
+export const createUserInSupabase = sqlServerUserService.createUser;

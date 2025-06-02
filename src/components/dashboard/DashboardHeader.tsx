@@ -18,6 +18,10 @@ export const DashboardHeader = ({ onShowUserManagement, showUserManagement }: Da
     navigate("/login");
   };
   
+  const toggleUserManagement = () => {
+    onShowUserManagement();
+  };
+  
   return (
     <header className="bg-card border-b px-6 py-4">
       <div className="container mx-auto flex justify-between items-center">
@@ -34,7 +38,7 @@ export const DashboardHeader = ({ onShowUserManagement, showUserManagement }: Da
             <Button 
               variant="ghost" 
               className="text-muted-foreground hover:text-foreground"
-              onClick={() => onShowUserManagement(!showUserManagement)}
+              onClick={toggleUserManagement}
             >
               <UserCog className="mr-2 h-5 w-5" />
               Gerenciar Usuários
