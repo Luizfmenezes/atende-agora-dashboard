@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export const LoginForm = () => {
   const [username, setUsername] = useState("");
@@ -12,6 +13,7 @@ export const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +23,9 @@ export const LoginForm = () => {
     try {
       const success = await login(username, password);
       
-      if (!success) {
+      if (success) {
+        navigate("/dashboard", { replace: true });
+      } else {
         setError("Usuário ou senha incorretos. Por favor, tente novamente.");
       }
     } catch (err) {
@@ -55,6 +59,7 @@ export const LoginForm = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -66,6 +71,7 @@ export const LoginForm = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={isLoading}
             />
           </div>
         </CardContent>
