@@ -2,7 +2,7 @@
 import { authService, userService as sqlServerUserService } from "@/lib/services/sqlServerService";
 
 // Serviço de autenticação
-export const authService as exportedAuthService = {
+export const exportedAuthService = {
   authenticateWithSupabase: authService.authenticate
 };
 
