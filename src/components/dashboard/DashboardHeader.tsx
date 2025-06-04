@@ -3,6 +3,7 @@ import { UserCog, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { Calculate72Hours } from "./Calculate72Hours";
 
 interface DashboardHeaderProps {
   onShowUserManagement: () => void;
@@ -35,14 +36,17 @@ export const DashboardHeader = ({ onShowUserManagement, showUserManagement }: Da
         </div>
         <div className="flex items-center gap-4">
           {user?.role === "admin" && (
-            <Button 
-              variant="ghost" 
-              className="text-muted-foreground hover:text-foreground"
-              onClick={toggleUserManagement}
-            >
-              <UserCog className="mr-2 h-5 w-5" />
-              Gerenciar Usuários
-            </Button>
+            <>
+              <Calculate72Hours />
+              <Button 
+                variant="ghost" 
+                className="text-muted-foreground hover:text-foreground"
+                onClick={toggleUserManagement}
+              >
+                <UserCog className="mr-2 h-5 w-5" />
+                Gerenciar Usuários
+              </Button>
+            </>
           )}
           <Button variant="ghost" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
             <LogOut className="mr-2 h-5 w-5" />

@@ -12,18 +12,18 @@ const Login = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-lg text-gray-600">Carregando...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'rgb(29, 40, 57)' }}>
+        <div className="text-lg text-white">Carregando...</div>
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'rgb(29, 40, 57)' }}>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Atende Agora</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold text-white mb-2">Atende Agora</h1>
+          <p className="text-gray-300">
             Sistema de gerenciamento de atendimentos
           </p>
         </div>
