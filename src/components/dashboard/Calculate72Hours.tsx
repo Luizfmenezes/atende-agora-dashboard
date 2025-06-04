@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calculator } from "lucide-react";
+import { Calculator, Clock } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 export const Calculate72Hours = () => {
@@ -15,6 +15,15 @@ export const Calculate72Hours = () => {
   const [result, setResult] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+
+  const setCurrentDateTime = () => {
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0];
+    const currentTime = now.toTimeString().slice(0, 5);
+    
+    setDeliveryDate(currentDate);
+    setDeliveryTime(currentTime);
+  };
 
   const calculateHoursDifference = () => {
     if (!attestDate || !attestTime || !deliveryDate || !deliveryTime) {
@@ -142,6 +151,18 @@ export const Calculate72Hours = () => {
                 onChange={(e) => setDeliveryTime(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={setCurrentDateTime}
+              className="text-sm"
+            >
+              <Clock className="mr-2 h-4 w-4" />
+              Hoje
+            </Button>
           </div>
 
           {result && (
