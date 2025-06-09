@@ -3,7 +3,15 @@
 
 ## ⚠️ PASSOS OBRIGATÓRIOS
 
-### 1. Editar o arquivo .env
+### 1. Instalar dependências
+
+**PRIMEIRO PASSO**: Instale as dependências do projeto:
+
+```bash
+npm install
+```
+
+### 2. Editar o arquivo .env
 
 **IMPORTANTE**: Edite o arquivo `.env` na raiz do projeto e substitua pelos seus dados reais:
 
@@ -18,12 +26,6 @@ SQLSERVER_TRUST_CERT=true
 JWT_SECRET=sua_chave_secreta_super_segura_aqui_123456
 VITE_API_URL=http://localhost:3001/api
 PORT=3001
-```
-
-### 2. Instalar dependências (se ainda não instalou)
-
-```bash
-npm install
 ```
 
 ### 3. Iniciar o servidor
@@ -92,6 +94,10 @@ CREATE TABLE usuarios (
 ```
 
 ## 🔧 Troubleshooting
+
+### Erro "Cannot find package"
+1. **Execute `npm install`** para instalar todas as dependências
+2. **Verifique se o node_modules existe** na pasta do projeto
 
 ### Erro "Failed to fetch"
 1. **Verifique se o servidor está rodando**: Deve aparecer "Server running on port 3001"
