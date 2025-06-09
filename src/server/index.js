@@ -5,15 +5,21 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const { initializeDatabase } = require('./config/sqlserver');
 
+console.log('📦 Carregando módulos...');
+
 // Import routes
 const { router: authRoutes } = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const attendancesRoutes = require('./routes/attendances');
 const sectorsRoutes = require('./routes/sectors');
 
+console.log('📋 Rotas carregadas com sucesso');
+
 // Initialize express app
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+console.log('🔧 Configurando middleware...');
 
 // Middleware
 app.use(cors({
@@ -24,11 +30,15 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+console.log('✅ Middleware configurado');
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/attendances', attendancesRoutes);
 app.use('/api/sectors', sectorsRoutes);
+
+console.log('🛣️ Rotas configuradas');
 
 // Root route
 app.get('/', (req, res) => {
@@ -46,7 +56,7 @@ app.get('/health', (req, res) => {
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-  console.error('Erro na API:', error);
+  console.error('❌ Erro na API:', error);
   res.status(500).json({ error: 'Erro interno do servidor' });
 });
 
@@ -54,12 +64,15 @@ app.use((error, req, res, next) => {
 const startServer = async () => {
   try {
     console.log('🚀 Iniciando servidor...');
+    console.log('🔌 Tentando conectar ao banco de dados...');
+    
     await initializeDatabase();
     
     const server = app.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`📡 API disponível em: http://localhost:${PORT}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`🌐 Dashboard: http://localhost:5173`);
     });
 
     // Graceful shutdown
@@ -71,8 +84,20 @@ const startServer = async () => {
       });
     });
 
+    process.on('SIGINT', () => {
+      console.log('\nSIGINT recebido. Fechando servidor...');
+      server.close(() => {
+        console.log('Servidor fechado.');
+        process.exit(0);
+      });
+    });
+
   } catch (error) {
     console.error('❌ Erro ao inicializar servidor:', error);
+    console.log('💡 Dicas:');
+    console.log('1. Verifique se as credenciais do SQL Server estão corretas no arquivo .env');
+    console.log('2. Verifique se o SQL Server está acessível');
+    console.log('3. Verifique se as tabelas foram criadas conforme o COMO_USAR.md');
     process.exit(1);
   }
 };

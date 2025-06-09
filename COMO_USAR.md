@@ -1,43 +1,54 @@
 
 # Como usar o sistema com SQL Server
 
-## 1. Configuração do .env
+## ⚠️ PASSOS OBRIGATÓRIOS
 
-Edite o arquivo `.env` na raiz do projeto e configure suas credenciais do SQL Server:
+### 1. Editar o arquivo .env
 
-```
+**IMPORTANTE**: Edite o arquivo `.env` na raiz do projeto e substitua pelos seus dados reais:
+
+```env
 SQLSERVER_HOST=kauikserver.ddns.net
 SQLSERVER_DATABASE=atendimento_recepcao
-SQLSERVER_USER=seu_usuario_aqui
-SQLSERVER_PASSWORD=sua_senha_aqui
+SQLSERVER_USER=SEU_USUARIO_REAL_AQUI
+SQLSERVER_PASSWORD=SUA_SENHA_REAL_AQUI
 SQLSERVER_PORT=3761
 SQLSERVER_ENCRYPT=false
 SQLSERVER_TRUST_CERT=true
-JWT_SECRET=sua_chave_secreta_super_segura_aqui
+JWT_SECRET=sua_chave_secreta_super_segura_aqui_123456
 VITE_API_URL=http://localhost:3001/api
+PORT=3001
 ```
 
-## 2. Instalar dependências
+### 2. Instalar dependências (se ainda não instalou)
 
 ```bash
 npm install
 ```
 
-## 3. Iniciar o servidor
+### 3. Iniciar o servidor
 
 ```bash
 node start-server.js
 ```
 
-## 4. Iniciar o frontend (em outro terminal)
+**Você deve ver:**
+```
+🚀 Iniciando servidor SQL Server...
+✅ Conectado ao SQL Server com sucesso!
+✅ Server running on port 3001
+📡 API disponível em: http://localhost:3001
+```
+
+### 4. Em outro terminal, iniciar o frontend
 
 ```bash
 npm run dev
 ```
 
-## 5. Estrutura das tabelas SQL Server
+## 📋 Estrutura das tabelas SQL Server (OBRIGATÓRIAS)
 
-Certifique-se que as seguintes tabelas existem no seu banco:
+Execute estes comandos no seu SQL Server Management Studio:
 
 ```sql
 -- Tabela de setores
@@ -79,11 +90,27 @@ CREATE TABLE usuarios (
 );
 ```
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
-Se o erro "Failed to fetch" persistir:
+### Erro "Failed to fetch"
+1. **Verifique se o servidor está rodando**: Deve aparecer "Server running on port 3001"
+2. **Teste a API diretamente**: Abra http://localhost:3001/health no navegador
+3. **Verifique as credenciais**: Certifique-se que SQLSERVER_USER e SQLSERVER_PASSWORD estão corretos
 
-1. Verifique se o servidor está rodando na porta 3001
-2. Confirme as credenciais do SQL Server no arquivo .env
-3. Teste a conexão com o SQL Server
-4. Verifique se não há firewall bloqueando a porta 3001
+### Erro de conexão SQL Server
+1. **Ping no servidor**: `ping kauikserver.ddns.net`
+2. **Teste a porta**: `telnet kauikserver.ddns.net 3761`
+3. **Verifique firewall**: A porta 3761 deve estar aberta
+
+### Servidor não inicia
+1. **Verifique se o Node.js está instalado**: `node --version`
+2. **Instale as dependências**: `npm install`
+3. **Execute com logs**: `node start-server.js`
+
+## 📞 Status da Conexão
+
+Para verificar se tudo está funcionando:
+
+1. ✅ Servidor rodando: http://localhost:3001/health
+2. ✅ Frontend rodando: http://localhost:5173
+3. ✅ SQL Server conectado: Logs do servidor devem mostrar "Conectado ao SQL Server com sucesso!"
