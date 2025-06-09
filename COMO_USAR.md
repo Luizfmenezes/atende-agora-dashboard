@@ -35,6 +35,7 @@ node start-server.js
 **Você deve ver:**
 ```
 🚀 Iniciando servidor SQL Server...
+🔌 Tentando conectar ao banco de dados...
 ✅ Conectado ao SQL Server com sucesso!
 ✅ Server running on port 3001
 📡 API disponível em: http://localhost:3001
@@ -96,6 +97,9 @@ CREATE TABLE usuarios (
 1. **Verifique se o servidor está rodando**: Deve aparecer "Server running on port 3001"
 2. **Teste a API diretamente**: Abra http://localhost:3001/health no navegador
 3. **Verifique as credenciais**: Certifique-se que SQLSERVER_USER e SQLSERVER_PASSWORD estão corretos
+
+### Erro "require is not defined"
+- Este erro foi corrigido. O `start-server.js` agora usa ES modules
 
 ### Erro de conexão SQL Server
 1. **Ping no servidor**: `ping kauikserver.ddns.net`

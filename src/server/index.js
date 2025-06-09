@@ -1,17 +1,17 @@
 
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-const bodyParser = require('body-parser');
-const { initializeDatabase } = require('./config/sqlserver');
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import bodyParser from 'body-parser';
+import { initializeDatabase } from './config/sqlserver.js';
 
 console.log('📦 Carregando módulos...');
 
-// Import routes
-const { router: authRoutes } = require('./routes/auth');
-const usersRoutes = require('./routes/users');
-const attendancesRoutes = require('./routes/attendances');
-const sectorsRoutes = require('./routes/sectors');
+// Import routes - Note: need to add .js extension for ES modules
+import { router as authRoutes } from './routes/auth.js';
+import usersRoutes from './routes/users.js';
+import attendancesRoutes from './routes/attendances.js';
+import sectorsRoutes from './routes/sectors.js';
 
 console.log('📋 Rotas carregadas com sucesso');
 

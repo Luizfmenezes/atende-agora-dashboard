@@ -1,6 +1,8 @@
 
-const sql = require('mssql');
-require('dotenv').config();
+import sql from 'mssql';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Configuração do SQL Server usando variáveis do .env principal
 const config = {
@@ -60,7 +62,7 @@ const closeDatabase = async () => {
   }
 };
 
-module.exports = {
+export {
   sql,
   config,
   initializeDatabase,

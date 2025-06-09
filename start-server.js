@@ -1,11 +1,15 @@
 
-const { spawn } = require('child_process');
-const path = require('path');
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 console.log('🚀 Iniciando servidor SQL Server...');
 
 // Verificar se o arquivo do servidor existe
-const serverPath = path.join(__dirname, 'src', 'server', 'index.js');
+const serverPath = join(__dirname, 'src', 'server', 'index.js');
 console.log('Caminho do servidor:', serverPath);
 
 const serverProcess = spawn('node', [serverPath], {
